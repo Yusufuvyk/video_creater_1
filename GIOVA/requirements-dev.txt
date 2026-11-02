@@ -1,0 +1,4 @@
+# Development only: building the exe. scikit-learn and pyriemann are now part of
+# the program itself (requirements-lock.txt).
+-r requirements-lock.txt
+pyinstaller==6.22.3

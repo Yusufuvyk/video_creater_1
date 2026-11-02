@@ -1,0 +1,27 @@
+# environments and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.vscode/
+
+# build output (the exe is published as a release download, not in the repository)
+build/
+build_icon/
+dist/
+*.spec
+
+# recordings and anything a person's EEG: never in the repository
+Data/
+data_local/
+*.edf
+*.bdf
+*.fif
+*.vhdr
+*.vmrk
+*.eeg
+!tests/data/**
+
+# test scratch
+tests/.tmp/

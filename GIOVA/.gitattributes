@@ -1,0 +1,16 @@
+# One line ending for the project's text: LF, Windows batch files CRLF (tools/line_endings.py, tests/test_text_files.py)
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.ico binary
+*.jpg binary
+*.pdf binary
+*.zip binary
+*.mat binary
+*.fif binary
+*.edf binary
+*.bdf binary
+*.npz binary
+*.ttf binary
+*.otf binary

@@ -1,0 +1,30 @@
+# GIOVA - what the program needs (versions pinned in requirements-lock.txt)
+brainflow
+mne
+numpy
+pandas
+scipy
+matplotlib
+pygame
+
+# --- GUI for eeg_dashboard.py ---
+pyqtgraph
+# PySide6 is PINNED to 6.8.x on purpose. Qt 6.9+ wheels link against an
+# external icuuc.dll that they do not ship; on this machine that resolves to
+# Anaconda's ICU 73, whose symbols do not match, and every Qt import dies with
+# "DLL load failed ... procedure not found". Qt 6.8 does not link external ICU.
+# Do not bump this without testing `from PySide6 import QtCore` first.
+PySide6==6.8.1.1
+
+# --- Workbench classifiers (v3) ---
+# scikit-learn: SVM, random forest, logistic regression, kNN, feature selection,
+# nested tuning, and the FastICA behind the ICA block. pyriemann: covariance,
+# tangent space and MDM for motor imagery.
+scikit-learn
+pyriemann
+# PyWavelets: wavelet denoising, DWT bands and the complex Morlet CWT
+PyWavelets
+# h5py: MATLAB files saved as v7.3 (HDF5), which scipy cannot read
+h5py
+# pymatreader: MNE reads EEGLAB .set files saved as v7.3 with it (and v7 ones, alike)
+pymatreader
