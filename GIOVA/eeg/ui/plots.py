@@ -426,7 +426,7 @@ class TimeSeriesView(pg.PlotWidget):
             self._clear_rulings()
             # Nothing to draw is worth saying, not an empty box: every selected
             # channel may simply be switched off.
-            self.setTitle("Time series" + (note or " — no channel to show"))
+            self.setTitle("Time series" + (note or ": no channel to show"))
             self._layout = None
             return
 
@@ -519,8 +519,8 @@ class TimeSeriesView(pg.PlotWidget):
         # rebuilt the axes on almost every frame.
         labels = tuple(f"{names[ch]}  ±{_fmt(scale)} uV"
                        for ch, scale in zip(channels, amplitude))
-        title = ("Time series — independent channel scales" if per_channel else
-                 "Time series — shared ±{} uV scale".format(_fmt(amplitude[0])))
+        title = ("Time series, each channel on its own scale" if per_channel else
+                 "Time series, one ±{} uV scale".format(_fmt(amplitude[0])))
         title += self._note
         layout = (tuple(channels), labels, round(span, 1), title)
         if layout == self._layout:
@@ -607,7 +607,7 @@ class BandPowerView(pg.PlotWidget):
     GLIDE_SECONDS = 0.3
 
     def __init__(self):
-        super().__init__(title="Band power — smoothed (2 s)")
+        super().__init__(title="Band power (smoothed over 2 s)")
         self.setLabel("left", "uV^2")
         self.showGrid(y=True, alpha=0.2)
         self.setMouseEnabled(x=False, y=False)

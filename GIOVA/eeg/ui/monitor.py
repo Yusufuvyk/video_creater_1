@@ -1893,7 +1893,7 @@ class MonitorPage(QtWidgets.QWidget):
             state = 'End of file' if self.player.at_end else 'Playback' if self.player.playing else 'Paused'
         else:
             state = 'No data · Stale' if stale else 'Collecting data' if age is None else 'Live'
-        age_text = '—' if age is None else f'{age:.1f} s ago'
+        age_text = 'not yet' if age is None else f'{age:.1f} s ago'
         timing = (' · frame {:.0f} ms, max gap {:.0f} ms (target {})'.format(
             max(self._frame_costs), max(self._frame_gaps), self._frame_ms)
             if self._frame_costs else '')

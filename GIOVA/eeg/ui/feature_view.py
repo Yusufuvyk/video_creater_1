@@ -20,7 +20,7 @@ def fmt(value):
 class ProfileDialog(QtWidgets.QDialog):
     def __init__(self, parent, profile):
         super().__init__(parent)
-        self.setWindowTitle("Feature profile — edit a copy")
+        self.setWindowTitle("Feature profile: edit a copy")
         fit_to_screen(self, 650, 570)
         self.profile = deepcopy(profile)
         layout = QtWidgets.QVBoxLayout(self)
@@ -296,7 +296,7 @@ class FeatureView(QtWidgets.QWidget):
             self.detail_note.setText(f"{self.profile.time_window:g} s windows / {self.profile.time_step:g} s step. "
                                      "Window centers are shown. Incomplete tails are omitted; trial sample counts stay unchanged.")
             return
-        self.plot.setLabel("bottom", "Condition — click a point to inspect its trial")
+        self.plot.setLabel("bottom", "Condition (click a point to inspect its trial)")
         names = list(dict.fromkeys([self.a.currentText(), self.b.currentText()]))
         self.plot.getAxis("bottom").setTicks([list(enumerate(names))])
         notes = []

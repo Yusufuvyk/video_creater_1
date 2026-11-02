@@ -191,7 +191,7 @@ class GamesPage(QtWidgets.QWidget):
         if not self.found:
             self.notice.setText("No games yet. Use … → Add game folder (e.g. alpha_ball_game_openbci).")
         for folder, problem in self.problems:
-            self._log("Not loaded: {} — {}".format(folder, problem))
+            self._log("Not loaded: {}: {}".format(folder, problem))
 
     def current_game(self):
         index = self.games.currentIndex()
@@ -281,7 +281,7 @@ class GamesPage(QtWidgets.QWidget):
         self.game = game
         self.bridge = BridgeServer(self.monitor.tap, self.invoker)
         self.events.clear()
-        self._log("— {} —".format(game.name))
+        self._log("Started: {}".format(game.name))
         process = self.process = QtCore.QProcess(self)
         process.setProcessChannelMode(QtCore.QProcess.ProcessChannelMode.MergedChannels)
         environment = QtCore.QProcessEnvironment.systemEnvironment()
@@ -339,7 +339,7 @@ class GamesPage(QtWidgets.QWidget):
 
     def _finished(self, code, status):
         self._read_output()
-        self._log("— game ended (exit code {}) —".format(code))
+        self._log("Game ended (exit code {})".format(code))
         self.monitor.game_stop_recording()
         if self.bridge is not None:
             self.bridge.close()

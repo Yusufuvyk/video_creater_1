@@ -87,8 +87,8 @@ otherwise at the next Start</td></tr>
 </table>
 <h3>Built-in profiles</h3>
 <ul>
-<li><b>OpenBCI default (16)</b> — OpenBCI's 16-channel layout, all pins on.</li>
-<li><b>Alpha 4 · O1 O2 PO3 PO4</b> — only four pins on (and in BIAS):
+<li><b>OpenBCI default (16)</b>: OpenBCI's 16-channel layout, all pins on.</li>
+<li><b>Alpha 4 · O1 O2 PO3 PO4</b>: only four pins on (and in BIAS):
   <table>
   <tr><th>Pin</th><td>5</td><td>6</td><td>7</td><td>15</td></tr>
   <tr><th>Electrode</th><td>PO3</td><td>PO4</td><td>O2</td><td>O1</td></tr>
@@ -97,7 +97,7 @@ otherwise at the next Start</td></tr>
   never appears twice.</li>
 </ul>
 <h3>Your own profile</h3>
-<p><b>…</b> next to Profile → <b>Edit profiles…</b> — works with no board connected and in any
+<p><b>…</b> next to Profile → <b>Edit profiles…</b>: works with no board connected and in any
 mode, so a profile can be prepared in advance:</p>
 <ol>
 <li>Select a profile and press <b>New from this…</b> (built-ins are read only).</li>
@@ -270,7 +270,7 @@ for features and exports are not smoothed.</p>
 <code>P = ∫<sub>f1</sub><sup>f2</sup> PSD(f) df</code>.</li>
 <li>Bands: delta 1–4, theta 4–8, alpha 8–13, beta 13–30, gamma 30–45 Hz.</li>
 <li><b>Relative alpha</b> = <code>100 × P(8–13 Hz) ÷ P(1–45 Hz)</code>, same channel and
-window — not relative to another channel or to eyes open.</li>
+window, not relative to another channel or to eyes open.</li>
 <li>Displayed curves and bars are smoothed (≈2 s time constant) for reading; the
 numbers used for features and exports are not.</li>
 </ul>
@@ -291,7 +291,7 @@ IMPEDANCE_MATH = """
 <tr><td style="color:#1a7f37"><b>green</b></td><td>&lt; 750 kΩ</td></tr>
 <tr><td style="color:#b08800"><b>yellow</b></td><td>&lt; 2500 kΩ</td></tr>
 <tr><td style="color:#cf222e"><b>red</b></td><td>above</td></tr>
-<tr><td><b>Open?</b></td><td>≥ 4 MΩ — electrode probably not touching</td></tr>
+<tr><td><b>Open?</b></td><td>≥ 4 MΩ: electrode probably not touching</td></tr>
 </table>
 <ul>
 <li>Limits are the OpenBCI GUI defaults for this same measurement; editable in Settings →
@@ -320,7 +320,7 @@ trials; missing samples keep their place.</li>
 <h3>Spectra</h3>
 <ul>
 <li>FFT: real, one-sided amplitude (µV), DC removed, normalised by the trial length.</li>
-<li>PSD: Hann Welch density (µV²/Hz), 2 s windows, 50 % overlap — the same functions
+<li>PSD: Hann Welch density (µV²/Hz), 2 s windows, 50 % overlap: the same functions
 as the Monitor. <b>Settings → Graphs</b> can draw it as µV/√Hz or µV instead; the computed
 values and exports do not change.</li>
 <li>Relative power divides by the direct integral over the total range (1–45 Hz by
@@ -339,7 +339,7 @@ computes → How the SNR is computed</i>.</li>
 <tr><td>Spectral entropy</td><td>Shannon entropy of the normalised PSD ÷ log₂(number of bins), 0–1</td></tr>
 <tr><td>Zero crossings</td><td>sign changes per second after DC removal</td></tr>
 <tr><td>Cliff's delta</td><td>P(B &gt; A) − P(B &lt; A), from −1 to +1; needs ≥ 3 trials per condition.
-Describes overlap — not accuracy and not a significance test.</td></tr>
+Describes overlap, not accuracy and not a significance test.</td></tr>
 </table>
 <h3>Advanced transforms</h3>
 <ul>
