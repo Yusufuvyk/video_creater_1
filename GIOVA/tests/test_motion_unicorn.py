@@ -70,7 +70,8 @@ class MotionDataTests(unittest.TestCase):
 
     def test_movement_is_zero_at_rest_and_rises_when_the_head_moves(self):
         fs = 250
-        still = np.zeros((3, fs)); still[1] = 1.0            # gravity on one axis, head still
+        still = np.zeros((3, fs))
+        still[1] = 1.0            # gravity on one axis, head still
         self.assertAlmostEqual(float(np.max(np.abs(movement_mg(still)))), 0.0, places=6)
         moving = still.copy()
         moving[0] = .5 * np.sin(2 * np.pi * 2 * np.arange(fs) / fs)
@@ -84,9 +85,11 @@ class MotionDataTests(unittest.TestCase):
 
     def test_summary_tells_still_from_moving(self):
         fs = 250
-        still = np.zeros((6, fs)); still[1] = 1.0
+        still = np.zeros((6, fs))
+        still[1] = 1.0
         text = motion_summary(still, fs, ["g"] * 3 + ["°/s"] * 3)
-        self.assertIn("|a| 1.00 g", text); self.assertIn("still ±0 mg", text)
+        self.assertIn("|a| 1.00 g", text)
+        self.assertIn("still ±0 mg", text)
         self.assertIn("rotation 0.0", text)
         moving = still.copy()
         moving[0] = .5 * np.sin(2 * np.pi * 2 * np.arange(fs) / fs)
@@ -106,7 +109,8 @@ class MonitorMotionTests(unittest.TestCase):
         self.page.show()
 
     def tearDown(self):
-        self.page.stop(); self.page.close()
+        self.page.stop()
+        self.page.close()
         QtCore.QThreadPool.globalInstance().waitForDone(3000)
 
     def play(self, recording, seconds):
@@ -139,6 +143,7 @@ class MonitorMotionTests(unittest.TestCase):
         self.assertTrue(any(s.isVisible() for s in self.page.time_view._shades))
         self.assertIn("moving ±", view.readout.text())               # the head moves after 5 s
         # A moment sits at the same x in the traces and the motion plots.
+
         def edges(box, widget):
             return [widget.mapToGlobal(widget.mapFromScene(point)).x() for point in (box.topLeft(), box.topRight())]
         traces = self.page.time_view.plotItem.vb
@@ -172,7 +177,8 @@ class UnicornSoftwareChannelTests(unittest.TestCase):
             settings = [hw.ChannelSetting(name not in ("Cz", "C4"), False) for name in boards.UNICORN.names]
             source._log_hardware(settings, "start unicorn")
             text = hardware_log_path(source.record_path).read_text(encoding="utf-8")
-            self.assertIn("software only", text); self.assertIn("off: Cz, C4", text)
+            self.assertIn("software only", text)
+            self.assertIn("off: Cz, C4", text)
             log = load_channel_log(source.record_path, 8)
             self.assertEqual([boards.UNICORN.names[i] for i, on in enumerate(log[0][1]) if not on], ["Cz", "C4"])
 
@@ -189,7 +195,8 @@ class UnicornSoftwareChannelTests(unittest.TestCase):
             page.source, page.player = source, None
             page.fs, page.n_channels = 250, 8
             page.panel.set_channels(list(boards.UNICORN.names))
-            page._begin_streaming(); page.timer.stop()
+            page._begin_streaming()
+            page.timer.stop()
             self.assertTrue(page.is_live)
             page.panel.unicorn_channels.only(["Fz", "C3", "Pz"])
             page._apply_hardware()
@@ -217,7 +224,8 @@ class UnicornSoftwareChannelTests(unittest.TestCase):
             np.testing.assert_array_equal(newest[2:], 0.0)
             np.testing.assert_array_equal(newest[:2], 7.0)
         finally:
-            page.stop(); page.close()
+            page.stop()
+            page.close()
             QtCore.QThreadPool.globalInstance().waitForDone(3000)
 
 

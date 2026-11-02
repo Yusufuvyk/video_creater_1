@@ -371,12 +371,12 @@ class MatMappingDialog(QtWidgets.QDialog):
     def _refresh(self):
         """Recompute the preview line from whatever is currently chosen."""
         mapping = self.mapping()
-        valid=True
+        valid = True
         try:
             text = mat.preview(self.variables, mapping)
         except Exception as exc:  # a half-typed field is not a crash
             text = "{}: {}".format(type(exc).__name__, exc)
-            valid=False
+            valid = False
 
         try:
             warning = self._names_warning(mapping)

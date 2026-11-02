@@ -45,13 +45,18 @@ class HardwareGroup(QtWidgets.QGroupBox):
         for i, name in enumerate(self.names):
             row, base = 1 + i % half, 4 * (i // half)
             label = QtWidgets.QLabel(name)
-            on = QtWidgets.QCheckBox(); on.setChecked(True)
-            bias = QtWidgets.QCheckBox(); bias.setChecked(True)
+            on = QtWidgets.QCheckBox()
+            on.setChecked(True)
+            bias = QtWidgets.QCheckBox()
+            bias.setChecked(True)
             on.toggled.connect(self._changed)
             bias.toggled.connect(self._changed)
-            grid.addWidget(label, row, base); grid.addWidget(on, row, base + 1)
+            grid.addWidget(label, row, base)
+            grid.addWidget(on, row, base + 1)
             grid.addWidget(bias, row, base + 2)
-            self.labels.append(label); self.on_boxes.append(on); self.bias_boxes.append(bias)
+            self.labels.append(label)
+            self.on_boxes.append(on)
+            self.bias_boxes.append(bias)
         grid.setColumnMinimumWidth(3, 12)
         outer.addLayout(grid)
 
@@ -59,7 +64,8 @@ class HardwareGroup(QtWidgets.QGroupBox):
         for text, callback in [("All on", self.all_on),
                                ("Only selected…", self.choose_only),
                                ("No BIAS", self.no_bias)]:
-            button = QtWidgets.QPushButton(text); button.clicked.connect(callback)
+            button = QtWidgets.QPushButton(text)
+            button.clicked.connect(callback)
             presets.addWidget(button)
         outer.addLayout(presets)
 
@@ -73,14 +79,16 @@ class HardwareGroup(QtWidgets.QGroupBox):
             "Sends all 16 channels again (a few seconds). Use if the board may have "
             "reset itself, e.g. after a power dip.")
         self.resend_button.clicked.connect(self.resend_clicked.emit)
-        buttons.addWidget(self.apply_button, 2); buttons.addWidget(self.resend_button, 1)
+        buttons.addWidget(self.apply_button, 2)
+        buttons.addWidget(self.resend_button, 1)
         outer.addLayout(buttons)
 
         note = QtWidgets.QLabel(
             "Off = channel powered down, out of BIAS and SRB2. With no channel "
             "in BIAS the feedback input is open and BIASOUT may saturate; unplug "
             "the lead to remove the BIAS electrode.")
-        note.setWordWrap(True); note.setStyleSheet(muted())
+        note.setWordWrap(True)
+        note.setStyleSheet(muted())
         outer.addWidget(note)
         self.state = QtWidgets.QLabel("Board: not connected")
         self.state.setWordWrap(True)
@@ -110,7 +118,10 @@ class HardwareGroup(QtWidgets.QGroupBox):
         self.green_limit = NoScrollSpinBox()
         self.yellow_limit = NoScrollSpinBox()
         for spin, value in ((self.green_limit, 750), (self.yellow_limit, 2500)):
-            spin.setRange(1, 4000); spin.setDecimals(0); spin.setSuffix(" kΩ"); spin.setValue(value)
+            spin.setRange(1, 4000)
+            spin.setDecimals(0)
+            spin.setSuffix(" kΩ")
+            spin.setValue(value)
         limits.addRow("Green below", self.green_limit)
         limits.addRow("Yellow below", self.yellow_limit)
         self.impedance = QtWidgets.QLabel("Impedance: not measured")
@@ -144,7 +155,7 @@ class HardwareGroup(QtWidgets.QGroupBox):
     def settings(self):
         return [hw.ChannelSetting(on.isChecked(), bias.isChecked())
                 for on, bias in zip(self.on_boxes[:self.active_count],
-                                     self.bias_boxes[:self.active_count])]
+                                    self.bias_boxes[:self.active_count])]
 
     def all_settings(self):
         """All saved controls, including Daisy channels hidden in 8-channel mode."""
@@ -153,7 +164,8 @@ class HardwareGroup(QtWidgets.QGroupBox):
 
     def set_settings(self, settings):
         for on, bias, s in zip(self.on_boxes, self.bias_boxes, settings):
-            on.setChecked(s.on); bias.setChecked(s.bias)
+            on.setChecked(s.on)
+            bias.setChecked(s.bias)
         self._changed()
 
     def on_channels(self):

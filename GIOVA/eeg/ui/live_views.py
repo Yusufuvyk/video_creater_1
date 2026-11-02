@@ -38,7 +38,8 @@ STATUS_STYLE = {
 }
 NEUTRAL_STYLE = ('#eef1f4', '#3c4650')
 #: The same under the dark theme: a dark tint of the colour, the text a light one.
-_GOOD, _CHECK, _HUM, _BAD = ('#16351f', '#8fe0a8'), ('#3d3112', '#f3d27a'), ('#1c2a47', '#a9c4ff'), ('#43201c', '#f6a99f')
+_GOOD, _CHECK, _HUM, _BAD = (('#16351f', '#8fe0a8'), ('#3d3112', '#f3d27a'), ('#1c2a47', '#a9c4ff'),
+                             ('#43201c', '#f6a99f'))
 STATUS_STYLE_DARK = {
     'No issues detected': _GOOD, 'Check signal': _CHECK, 'Line noise': _HUM, 'Flat': _BAD,
     'Identical signal': _BAD, 'Switched off': ('#262b33', '#98a2ae'), 'Saturated': _BAD, 'Missing data': _BAD,
@@ -124,7 +125,9 @@ class QualityTable(QtWidgets.QTableWidget):
                 self.setItem(row, col, QtWidgets.QTableWidgetItem(text))
             channel = self.item(row, 0)
             channel.setIcon(_swatch(CHANNEL_COLORS[row % len(CHANNEL_COLORS)]))
-            font = channel.font(); font.setBold(True); channel.setFont(font)
+            font = channel.font()
+            font.setBold(True)
+            channel.setFont(font)
             self._style_status(row, None)
 
     def _style_status(self, row, status):
@@ -176,22 +179,32 @@ class SpectrumPanel(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         controls = QtWidgets.QHBoxLayout()
-        self.mode = NoScrollComboBox(); self.mode.addItems(['FFT', 'PSD', 'SNR'])
+        self.mode = NoScrollComboBox()
+        self.mode.addItems(['FFT', 'PSD', 'SNR'])
         self.mode.setToolTip('FFT: amplitude, µV · PSD: power density, µV²/Hz (or the unit chosen in '
                              'Settings → Graphs) · SNR: power over its '
                              'neighbours 0.75-2.5 Hz away (1 = no peak) - for flicker (SSVEP) responses')
         #: what the PSD mode draws: Settings → Graphs
         self.psd_unit = psd_unit()
-        self.arrangement = NoScrollComboBox(); self.arrangement.addItems(['Grid', 'Overlay'])
-        self.input = NoScrollComboBox(); self.input.addItems(['Filtered', 'Raw'])
-        self.log = QtWidgets.QCheckBox('Log'); self.log.setChecked(True)
+        self.arrangement = NoScrollComboBox()
+        self.arrangement.addItems(['Grid', 'Overlay'])
+        self.input = NoScrollComboBox()
+        self.input.addItems(['Filtered', 'Raw'])
+        self.log = QtWidgets.QCheckBox('Log')
+        self.log.setChecked(True)
         # The band drawn. Zooming in on 12-18 Hz is how a flicker response is
         # read; before, only the upper edge could be moved.
-        self.minimum = NoScrollSpinBox(); self.minimum.setRange(0, 998); self.minimum.setValue(1)
-        self.minimum.setSuffix(' Hz'); self.minimum.setDecimals(0)
+        self.minimum = NoScrollSpinBox()
+        self.minimum.setRange(0, 998)
+        self.minimum.setValue(1)
+        self.minimum.setSuffix(' Hz')
+        self.minimum.setDecimals(0)
         self.minimum.setToolTip('Lowest frequency drawn')
-        self.maximum = NoScrollSpinBox(); self.maximum.setRange(2, 1000); self.maximum.setValue(60)
-        self.maximum.setSuffix(' Hz'); self.maximum.setDecimals(0)
+        self.maximum = NoScrollSpinBox()
+        self.maximum.setRange(2, 1000)
+        self.maximum.setValue(60)
+        self.maximum.setSuffix(' Hz')
+        self.maximum.setDecimals(0)
         self.maximum.setToolTip('Highest frequency drawn')
         self.scale = NoScrollComboBox()
         for label, key in (('Auto', AUTO), ('Peak', PEAK), ('Manual', MANUAL)):
@@ -200,7 +213,9 @@ class SpectrumPanel(QtWidgets.QWidget):
                               'fold back at 125 Hz) run off the top · Peak: fits the tallest line · '
                               'Manual: the top you type')
         self.scale_top = NoScrollSpinBox()
-        self.scale_top.setRange(1e-6, 1e9); self.scale_top.setDecimals(2); self.scale_top.setValue(100)
+        self.scale_top.setRange(1e-6, 1e9)
+        self.scale_top.setDecimals(2)
+        self.scale_top.setValue(100)
         self.scale_top.setToolTip('Top of the y axis')
         self.scale_top.setVisible(False)
         self._held = HeldScale(log=True)
@@ -249,14 +264,24 @@ class SpectrumPanel(QtWidgets.QWidget):
         self.caption = QtWidgets.QLabel(self.base_caption)
         self.caption.setWordWrap(True)
         layout.addWidget(self.caption)
-        self.scroll = QtWidgets.QScrollArea(); self.scroll.setWidgetResizable(True)
+        self.scroll = QtWidgets.QScrollArea()
+        self.scroll.setWidgetResizable(True)
         self.graphics = pg.GraphicsLayoutWidget()
         self.scroll.setWidget(self.graphics)
         layout.addWidget(self.scroll, 1)
-        self._plots = []; self._curves = []; self._layout_key = None; self._axes_key = None
-        self._values = None; self._freqs = None; self._names = []; self._channels = []
-        self._bounds = None; self._last_time = None; self._fs = 125
-        self._shown = None; self._last_animation = None
+        self._plots = []
+        self._curves = []
+        self._layout_key = None
+        self._axes_key = None
+        self._values = None
+        self._freqs = None
+        self._names = []
+        self._channels = []
+        self._bounds = None
+        self._last_time = None
+        self._fs = 125
+        self._shown = None
+        self._last_animation = None
         #: notch frequencies: filtered spectra keep a residue there that must
         #: not set the scale (after a 50 Hz notch, 166 µV²/Hz of mains beside
         #: a 6 µV²/Hz SSVEP line on 18 Sept - the EEG lay flat on the axis)
@@ -288,7 +313,10 @@ class SpectrumPanel(QtWidgets.QWidget):
         self.computation_changed.emit()
 
     def reset(self):
-        self._values = None; self._freqs = None; self._last_time = None; self._bounds = None
+        self._values = None
+        self._freqs = None
+        self._last_time = None
+        self._bounds = None
         self._shown = None
         for curve in self._curves:
             curve.setData([], [])
@@ -472,7 +500,9 @@ class SpectrumPanel(QtWidgets.QWidget):
         grid = self.arrangement.currentText() == 'Grid'
         key = (grid, tuple(self._channels), tuple(self._names))
         if key != self._layout_key:
-            self.graphics.clear(); self._plots = []; self._curves = []
+            self.graphics.clear()
+            self._plots = []
+            self._curves = []
             self._layout_key = key
             self._axes_key = None
             overlay = legend = None
@@ -486,7 +516,8 @@ class SpectrumPanel(QtWidgets.QWidget):
             for slot, channel in enumerate(self._channels):
                 plot = self.graphics.addPlot(row=slot // 4, col=slot % 4, viewBox=ChannelViewBox()) if grid else overlay
                 if grid:
-                    plot.setTitle(self._names[channel], color=CHANNEL_COLORS[channel % len(CHANNEL_COLORS)], size='10pt')
+                    plot.setTitle(self._names[channel], color=CHANNEL_COLORS[channel % len(CHANNEL_COLORS)],
+                                  size='10pt')
                     plot.getViewBox().clicked.connect(lambda c=channel: self.channel_clicked.emit(c))
                 curve = plot.plot(pen=channel_pen(channel, shared_plot=not grid), antialias=False)
                 if legend is not None:
@@ -514,7 +545,8 @@ class SpectrumPanel(QtWidgets.QWidget):
                     # Major and first minor level only. A log axis otherwise
                     # draws every sub-decade line, dense and costly to repaint.
                     axis.setStyle(maxTickLevel=1)
-                self._plots.append(plot); self._curves.append(curve)
+                self._plots.append(plot)
+                self._curves.append(curve)
             self.graphics.setMinimumHeight(max(280, math.ceil(len(self._channels) / 4) * 135) if grid else 280)
         if self._values is None:
             return

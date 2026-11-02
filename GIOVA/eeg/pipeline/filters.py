@@ -213,7 +213,7 @@ def describe(params):
                 detail.append("{:g} dB stop-band attenuation".format(params.get("attenuation", 40.0)))
         else:
             detail.append("transition {}".format("{:g} Hz".format(params["transition"])
-                                                  if params.get("transition") else "automatic as in MNE"))
+                                                 if params.get("transition") else "automatic as in MNE"))
         if params.get("design") != "ideal":
             phase = ("zero-phase, applied forward and backward" if params.get("design", "butterworth") != "fir"
                      else "zero-phase, linear-phase taps applied centred") if params.get("phase", "zero") == "zero" \
@@ -224,5 +224,6 @@ def describe(params):
         parts.append("notch at {} Hz only (Q = {:g})".format(
             ", ".join("{:g}".format(f) for f in params["notches"]), params.get("notch_q", 30.0)))
     elif params.get("notch"):
-        parts.append("notch at {:g} Hz and its harmonics (Q = {:g})".format(params["notch"], params.get("notch_q", 30.0)))
+        parts.append("notch at {:g} Hz and its harmonics (Q = {:g})".format(
+            params["notch"], params.get("notch_q", 30.0)))
     return ("Filtered: " + "; ".join(parts) + ".") if parts else "No filtering."

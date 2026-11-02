@@ -33,7 +33,8 @@ class SpectralWindowTests(unittest.TestCase):
     def setUp(self):
         from eeg.ui.monitor import MonitorPage
         self.page = page = MonitorPage()
-        page.resize(1400, 900); page.show()
+        page.resize(1400, 900)
+        page.show()
         t = np.arange(FS * 40) / FS
         data = np.array([10 * np.sin(2 * np.pi * 10 * t) + i for i in range(4)])
         page.source = FileSource(Recording(data, FS, ["O1", "O2", "PO3", "PO4"]))
@@ -48,7 +49,8 @@ class SpectralWindowTests(unittest.TestCase):
 
     def start(self, window):
         self.page.panel.window_seconds.setValue(window)
-        self.page._begin_streaming(); self.page.timer.stop()
+        self.page._begin_streaming()
+        self.page.timer.stop()
         self.page.transport.set_playing(True)
 
     def test_fft_resolution_follows_the_window(self):

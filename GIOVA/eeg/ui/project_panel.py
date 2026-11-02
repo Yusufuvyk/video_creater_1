@@ -279,7 +279,8 @@ class ProjectPanel(QtWidgets.QWidget):
                 self.tree.setCurrentItem(item)
         name, where = next((names[f] for f in names if pr.same_folder(f, active)), (pr.display_name(active), ""))
         self.active_label.setText("Active project: <b>{}</b>{}".format(
-            html.escape(name), " <span style='color: {};'>{}</span>".format(color("subtle"), html.escape(where)) if where else ""))
+            html.escape(name),
+            " <span style='color: {};'>{}</span>".format(color("subtle"), html.escape(where)) if where else ""))
         self._selection_changed()
 
     def _fill(self, parent, nodes):

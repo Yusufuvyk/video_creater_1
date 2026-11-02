@@ -193,7 +193,8 @@ class DragTests(unittest.TestCase):
     def test_a_tab_torn_off_at_the_side_does_not_snap_straight_back(self):
         # Torn off inside the left dock zone: it comes out under the cursor and
         # stays out when let go there, since it never showed a place to dock.
-        self.tabs.pop_out("A"); self.tabs.pop_out("B")
+        self.tabs.pop_out("A")
+        self.tabs.pop_out("B")
         centre = self.bar.tabRect(0).center()
         mouse(self.bar, "press", centre)
         mouse(self.bar, "move", centre + QtCore.QPoint(0, 300))

@@ -32,7 +32,8 @@ class Splash(unittest.TestCase):
         def near(target):
             return any(abs(QtGui.QColor(c).red() - target.red()) < 30 and abs(QtGui.QColor(c).green() - target.green()) < 30
                        and abs(QtGui.QColor(c).blue() - target.blue()) < 30 for c in colours)
-        self.assertTrue(near(BLUE)); self.assertTrue(near(TEAL))            # the logo's ribbon and the accent
+        self.assertTrue(near(BLUE))
+        self.assertTrue(near(TEAL))            # the logo's ribbon and the accent
         light = GiovaSplash(dark=False, pixel_ratio=1.0).pixmap().toImage()
         self.assertEqual(light.pixelColor(300, 10).name(), '#f1f1f1')
         before = splash.pixmap().cacheKey()
@@ -52,7 +53,8 @@ class Splash(unittest.TestCase):
         before = splash.pixmap().cacheKey()
         for name in ('wave', 'colorsys'):                        # small stdlib modules, loaded afresh
             sys.modules.pop(name, None)
-        import wave, colorsys                                    # noqa: F401 - each import asks the pacer first
+        import wave                                              # noqa: F401 - each import asks the pacer first
+        import colorsys                                          # noqa: F401
         splash._last = 0.0
         splash.tick()
         self.assertGreater(splash.progress, 0.0)
@@ -82,6 +84,7 @@ class Splash(unittest.TestCase):
         dark, light = app_icon(), app_icon(light=True)
         for size in ICON_SIZES:
             self.assertIn(QtCore.QSize(size, size), light.availableSizes())
+
         def middle(icon):                                                       # the tile, above the wave
             image = icon.pixmap(48, 48).toImage()
             return image.pixelColor(image.width() // 2, image.height() // 12)
@@ -98,7 +101,8 @@ class Splash(unittest.TestCase):
             self.assertFalse(any(c.red() > 200 and c.green() > 200 and c.blue() > 200 for c in border))
 
     def test_splash_has_no_university_line(self):
-        import inspect, eeg.ui.splash as splash
+        import inspect
+        import eeg.ui.splash as splash
         self.assertNotIn("Universit", inspect.getsource(splash))
 
     def test_splash_module_does_not_pull_in_the_heavy_stack(self):
@@ -109,7 +113,8 @@ class Splash(unittest.TestCase):
                              env=dict(os.environ, QT_QPA_PLATFORM='offscreen'), timeout=60)
         self.assertEqual(out.returncode, 0, out.stderr)
         loaded = out.stdout.strip().splitlines()[-1] if out.stdout.strip() else ''
-        self.assertNotIn('scipy', loaded); self.assertNotIn('brainflow', loaded)
+        self.assertNotIn('scipy', loaded)
+        self.assertNotIn('brainflow', loaded)
 
 
 if __name__ == '__main__':

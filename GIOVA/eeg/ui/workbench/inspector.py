@@ -2,9 +2,10 @@
 
 A block's parameters become a short form. Only the ones that usually matter are
 shown; the rest wait behind Options. A setting that means nothing with the others
-as they are (an STFT window while the method is Morlet) is hidden, its value kept. Lists are typed as text ("C3, Cz, C4",
-"mu 8-13, beta 13-30"); where the recording is known, Pick… offers its channel
-names or event labels so nobody has to remember how a dataset spells them.
+as they are (a Chebyshev's ripple under a Butterworth design) is hidden, its value
+kept. Lists are typed as text ("C3, Cz, C4", "mu 8-13, beta 13-30"); where the
+recording is known, Pick… offers its channel names or event labels so nobody has to
+remember how a dataset spells them.
 """
 import json
 import re

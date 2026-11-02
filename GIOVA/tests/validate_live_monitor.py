@@ -24,8 +24,10 @@ out.mkdir(exist_ok=True)
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 QtGui.QFontDatabase.addApplicationFont('C:/Windows/Fonts/segoeui.ttf')
 app.setFont(QtGui.QFont('Segoe UI', 9))
-window = MainWindow(); page = window.monitor
-window.show(); app.processEvents()
+window = MainWindow()
+page = window.monitor
+window.show()
+app.processEvents()
 t = np.arange(125 * 12) / 125
 data = np.array([(10 + i) * np.sin(2*np.pi*(8+i/2)*t) for i in range(16)])
 data[3] += 60 * np.sin(2*np.pi*50*t)
@@ -35,17 +37,22 @@ page.source = FileSource(Recording(data, 125, page.panel.channel_names))
 page.player = Player(page.source, 125)
 page.panel.file_combo.addItem('Synthetic validation · 16 channels', None)
 page.panel.file_combo.setCurrentIndex(page.panel.file_combo.count() - 1)
-page.panel.set_running(True); page.panel.start_button.setText('Stop')
-page.transport.configure(data.shape[1], 125); page.transport.set_playing(True)
+page.panel.set_running(True)
+page.panel.start_button.setText('Stop')
+page.transport.configure(data.shape[1], 125)
+page.transport.set_playing(True)
 page._rail_uv = 187500
 page.multi_spectrum.mode.setCurrentText('FFT')
 page.multi_spectrum.arrangement.setCurrentText('Grid')
 page._tick(5)
-page._last_quality = -float('inf'); page._tick(1)
-QtCore.QThreadPool.globalInstance().waitForDone(5000); app.processEvents()
+page._last_quality = -float('inf')
+page._tick(1)
+QtCore.QThreadPool.globalInstance().waitForDone(5000)
+app.processEvents()
 sizes = {}
 for width, height in [(1366, 768), (1920, 1080)]:
-    window.resize(width, height); app.processEvents()
+    window.resize(width, height)
+    app.processEvents()
     for mode in ['Signals', 'Grid', 'Overlay']:
         page.view_tabs.setCurrentIndex(0 if mode == 'Signals' else 1)
         if mode != 'Signals':
@@ -54,19 +61,25 @@ for width, height in [(1366, 768), (1920, 1080)]:
         name = f'festival-{mode.lower()}-{width}x{height}'
         window.grab().save(str(out / (name + '.png')))
         sizes[name] = [window.width(), window.height(), window.minimumSizeHint().width(), window.minimumSizeHint().height()]
-page._show_channel(3); app.processEvents()
-page.detail.grab().save(str(out / 'festival-channel-detail.png')); page.detail.hide()
-window.resize(1920, 1080); app.processEvents()
+page._show_channel(3)
+app.processEvents()
+page.detail.grab().save(str(out / 'festival-channel-detail.png'))
+page.detail.hide()
+window.resize(1920, 1080)
+app.processEvents()
 page.multi_spectrum.arrangement.setCurrentText('Grid')
 page.player = None
 origin = time.perf_counter()
 clock = [origin]
-durations = []; queue_sizes = []; samples = []
+durations = []
+queue_sizes = []
+samples = []
 try:
     import psutil
     process = psutil.Process()
 except ImportError:
     process = None
+
 
 def resident_bytes():
     if process:
@@ -75,11 +88,13 @@ def resident_bytes():
     if os.name == 'nt':
         import ctypes
         from ctypes import wintypes
+
         class Counters(ctypes.Structure):
             _fields_ = [('cb', wintypes.DWORD), ('faults', wintypes.DWORD)] + [
                 (name, ctypes.c_size_t) for name in ('peak', 'working', 'quota_peak_paged', 'quota_paged',
-                                                    'quota_peak_nonpaged', 'quota_nonpaged', 'pagefile', 'peak_pagefile')]
-        counters = Counters(); counters.cb = ctypes.sizeof(counters)
+                                                     'quota_peak_nonpaged', 'quota_nonpaged', 'pagefile', 'peak_pagefile')]
+        counters = Counters()
+        counters.cb = ctypes.sizeof(counters)
         handle = ctypes.windll.kernel32.GetCurrentProcess
         handle.restype = wintypes.HANDLE
         get_info = ctypes.windll.psapi.GetProcessMemoryInfo
@@ -87,6 +102,8 @@ def resident_bytes():
         if get_info(handle(), ctypes.byref(counters), counters.cb):
             return counters.working
     return None
+
+
 started = time.perf_counter()
 with patch('eeg.ui.monitor.time.perf_counter', new=lambda: clock[0]):
     for frame in range(args.seconds * 20):
@@ -96,7 +113,8 @@ with patch('eeg.ui.monitor.time.perf_counter', new=lambda: clock[0]):
         n = 6 if frame % 2 == 0 else 7
         times = (page.sample_position + np.arange(n)) / 125
         block = np.array([(10+i)*np.sin(2*np.pi*(8+i/2)*times) for i in range(16)])
-        page._ingest(block); page._render()
+        page._ingest(block)
+        page._render()
         queue_sizes.append(len(page.spectral_jobs.active))
         # Full painting for the performance segment; thereafter coalesce GUI
         # paints to 2 Hz while still ingesting/rendering all 20 ticks/second.
@@ -117,10 +135,11 @@ report = dict(context='Accelerated synthetic stream, 16 channels, 125 Hz, Qt off
                       'All frames painted during performance segment; subsequent soak coalesces paints at 2 Hz.',
               simulated_seconds=args.seconds, performance_seconds=min(args.seconds, args.performance_seconds),
               wall_seconds=elapsed, mean_frame_ms=float(np.mean(measured)),
-              p95_frame_ms=float(np.percentile(measured,95)), max_pending=max(queue_sizes), memory_samples=samples,
+              p95_frame_ms=float(np.percentile(measured, 95)), max_pending=max(queue_sizes), memory_samples=samples,
               window_sizes=sizes)
 (out / 'festival-monitor-validation.json').write_text(json.dumps(report, indent=2))
 print(json.dumps(report, indent=2))
-page.stop(); window.hide()
+page.stop()
+window.hide()
 # Validation must not overwrite the operator's saved preferences.
 QtCore.QThreadPool.globalInstance().waitForDone(5000)

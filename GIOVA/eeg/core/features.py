@@ -30,7 +30,7 @@ class FeatureSet:
         block = np.atleast_2d(np.asarray(block, dtype=float))
         if block.shape[-1] < 3:
             raise ValueError("Window too short")
-        self.last_values = [extract(x,self.fs,self.profile,self.window_seconds) for x in block]
+        self.last_values = [extract(x, self.fs, self.profile, self.window_seconds) for x in block]
         return np.array([[row.values[key] for key in self.profile.selected] for row in self.last_values])
 
 
@@ -80,7 +80,8 @@ class FeatureLog:
         self._writer = csv.writer(self._handle)
         self._feature_names = list(feature_names)
         self._metadata = __import__("json").dumps(metadata or {}, sort_keys=True)
-        self._writer.writerow(["source_seconds", "elapsed_seconds", "channel", "feature", "value", "settings", "reason"])
+        self._writer.writerow(["source_seconds", "elapsed_seconds", "channel", "feature", "value", "settings",
+                               "reason"])
         self._names = list(names)
         self._t0 = None
 
@@ -89,7 +90,7 @@ class FeatureLog:
             self._t0 = timestamp
         elapsed = timestamp - self._t0
         for slot, channel in enumerate(channels):
-            for index,(feature, value) in enumerate(zip(self._feature_names, row[slot])):
+            for index, (feature, value) in enumerate(zip(self._feature_names, row[slot])):
                 self._writer.writerow([timestamp, elapsed, self._names[channel], feature,
                                        value if np.isfinite(value) else "", self._metadata,
                                        reasons[slot][index] if reasons is not None else ""])

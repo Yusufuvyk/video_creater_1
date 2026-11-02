@@ -51,7 +51,6 @@ class BandPowerTests(unittest.TestCase):
         self.assertFalse(hasattr(FeaturesPreview(features), "plot"))
 
 
-
 class ScrollTests(unittest.TestCase):
     def test_the_wheel_over_a_graph_scrolls_the_panel_unless_zoom_is_on(self):
         from pyqtgraph.Qt import QtCore, QtGui
@@ -213,6 +212,7 @@ class MethodsTextTests(unittest.TestCase):
                                                 "on the training folds only.")
         self.assertEqual(first_sentence("Filtered: band-pass 8–30 Hz (order 4; zero-phase)."),
                          "Filtered: band-pass 8–30 Hz (order 4; zero-phase).")
+
 
 def made_up_comparison():
     """Five recordings, three pipelines (a real Comparison, its Scores stand-ins carrying what it reads); a random

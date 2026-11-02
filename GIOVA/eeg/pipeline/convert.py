@@ -98,7 +98,7 @@ def from_session(path, recording=None, source_path=None):
     elif profile is None:
         notes.append("This session has no profile (an older file): each trial's time zero is its start.")
     epochs = then("epochs", {"source": "manual", "trials": [[t.id, t.condition, t.start, t.end, t.included]
-                                                           for t in trials],
+                                                            for t in trials],
                              "tmin": 0.0 - zero, "tmax": float(settings.duration) - zero,
                              "quality_mad": float(settings.quality_mad)})
     analysed = graph.add("trial_channels", {"channels": list(channels)})

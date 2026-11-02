@@ -132,6 +132,7 @@ def export_csv(path, result, source_path, reference="", time_rows=None):
             from ..core.feature_profiles import summary, condition_values, cliffs_delta
             profile = result.features.profile
             specs = profile.visible_specs()
+
             def finite(value):
                 return value if np.isfinite(value) else ""
             feature_common = dict(common, profile=json.dumps(profile.to_dict(), sort_keys=True),
@@ -143,15 +144,15 @@ def export_csv(path, result, source_path, reference="", time_rows=None):
                             quality_flags="; ".join(result.quality.get(entry.trial.id, [])))
                 for spec in specs:
                     writer.writerow(dict(base, calculation="Trial feature", feature_id=spec.id, quantity=spec.name,
-                                         definition=spec.description, value=finite(values.values[spec.id]), unit=spec.unit,
-                                         reason=values.reasons.get(spec.id, "")))
+                                         definition=spec.description, value=finite(values.values[spec.id]),
+                                         unit=spec.unit, reason=values.reasons.get(spec.id, "")))
                 if time_rows and entry.trial.id in time_rows:
                     times, windows = time_rows[entry.trial.id]
                     for timestamp, values in zip(times, windows):
                         for spec in specs:
                             writer.writerow(dict(base, calculation="Within-trial feature", feature_id=spec.id,
-                                                 quantity=spec.name, definition=spec.description, x=timestamp, x_unit="s",
-                                                 value=finite(values.values[spec.id]), unit=spec.unit,
+                                                 quantity=spec.name, definition=spec.description, x=timestamp,
+                                                 x_unit="s", value=finite(values.values[spec.id]), unit=spec.unit,
                                                  reason=values.reasons.get(spec.id, "")))
             for condition in result.conditions:
                 for spec in specs:
@@ -161,10 +162,12 @@ def export_csv(path, result, source_path, reference="", time_rows=None):
                     base = dict(feature_common, condition=condition.name, trial_ids=";".join(condition.trial_ids),
                                 feature_id=spec.id, quantity=spec.name, definition=spec.description, unit=spec.unit)
                     writer.writerow(dict(base, calculation="Condition feature summary", n_trials=stats["n"],
-                                         value=finite(stats["mean"]), sd=finite(stats["sd"]), median=finite(stats["median"]),
-                                         q1=finite(stats["q1"]), q3=finite(stats["q3"]), reference_condition=reference,
-                                         difference=finite(stats["mean"]-ref_stats["mean"]),
-                                         cliffs_delta=finite(cliffs_delta(ref,vals)) if reference!=condition.name else ""))
+                                         value=finite(stats["mean"]), sd=finite(stats["sd"]),
+                                         median=finite(stats["median"]), q1=finite(stats["q1"]),
+                                         q3=finite(stats["q3"]), reference_condition=reference,
+                                         difference=finite(stats["mean"] - ref_stats["mean"]),
+                                         cliffs_delta=(finite(cliffs_delta(ref, vals)) if reference != condition.name
+                                                       else "")))
                     values = result.features.mean_signals[condition.name]
                     writer.writerow(dict(base, calculation="Mean signal feature", n_trials=len(condition.trial_ids),
-                                         value=finite(values.values[spec.id]), reason=values.reasons.get(spec.id,"")))
+                                         value=finite(values.values[spec.id]), reason=values.reasons.get(spec.id, "")))

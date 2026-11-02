@@ -108,7 +108,9 @@ class LiveUi(unittest.TestCase):
 
     def setUp(self):
         self.page = MonitorPage()
-        self.page.resize(1366, 730); self.page.show(); self.app.processEvents()
+        self.page.resize(1366, 730)
+        self.page.show()
+        self.app.processEvents()
         self.page.multi_spectrum.mode.setCurrentText('FFT')
         self.page.multi_spectrum.input.setCurrentText('Filtered')
         self.page.multi_spectrum.arrangement.setCurrentText('Grid')
@@ -119,7 +121,9 @@ class LiveUi(unittest.TestCase):
         self.addCleanup(self.cleanup)
 
     def cleanup(self):
-        self.page.stop(); self.page.detail.close(); self.page.close()
+        self.page.stop()
+        self.page.detail.close()
+        self.page.close()
         QtCore.QThreadPool.globalInstance().waitForDone(5000)
         self.app.processEvents()
 
@@ -170,7 +174,8 @@ class LiveUi(unittest.TestCase):
         self.assertIn('Paused', page.connection_label.text())
 
     def test_stale_live_data_and_recovery_collects_new_window(self):
-        page = self.page; page.player = None
+        page = self.page
+        page.player = None
         with patch('eeg.ui.monitor.time.perf_counter', return_value=0):
             page._ingest(np.tile(sine(), (16, 1)))
         with patch('eeg.ui.monitor.time.perf_counter', return_value=3):
@@ -226,11 +231,14 @@ class LiveUi(unittest.TestCase):
         # line at 15 Hz, EEG up to ~9 µV²/Hz.
         freqs = np.arange(0, 125.5, .5)
         psd = np.ones((1, freqs.size))
-        psd[0, freqs == 15] = 6.7; psd[0, freqs == 9.5] = 9; psd[0, freqs == 50] = 166
+        psd[0, freqs == 15] = 6.7
+        psd[0, freqs == 9.5] = 9
+        psd[0, freqs == 50] = 166
         snapshot = dict(psd=psd, psd_freqs=freqs, fft=psd, fft_freqs=freqs)
         view = self.page.multi_spectrum
         view.configure(['Fz'], [0], 250)
-        view.mode.setCurrentText('PSD'); view.log.setChecked(False)
+        view.mode.setCurrentText('PSD')
+        view.log.setChecked(False)
         view.input.setCurrentText('Filtered')
         view.set_scale_exclusions([50.0, 100.0])
         view.update_snapshot(snapshot, 0)
@@ -257,11 +265,13 @@ class LiveUi(unittest.TestCase):
         self.assertEqual(line_frequencies(250), (50.0, 100.0))
         freqs = np.arange(0, 62.75, .25)
         psd = np.ones((1, freqs.size))
-        psd[0, freqs == 15] = 5; psd[0, freqs == 25] = 300       # the alias at 125 Hz
+        psd[0, freqs == 15] = 5
+        psd[0, freqs == 25] = 300       # the alias at 125 Hz
         snapshot = dict(psd=psd, psd_freqs=freqs, fft=psd, fft_freqs=freqs)
         view = self.page.multi_spectrum
         view.configure(['O1'], [0], 125)
-        view.mode.setCurrentText('PSD'); view.log.setChecked(False)
+        view.mode.setCurrentText('PSD')
+        view.log.setChecked(False)
         view.update_snapshot(snapshot, 0)
         self.assertLess(view._bounds[1], 20)
 
@@ -279,7 +289,8 @@ class LiveUi(unittest.TestCase):
         self.assertAlmostEqual(float(np.nanmedian(snr[1, (f > 5) & (f < 40)])), 1, delta=.35)
         view = self.page.multi_spectrum
         view.configure(['A', 'B'], [0, 1], 125)
-        view.mode.setCurrentText('SNR'); view.log.setChecked(False)
+        view.mode.setCurrentText('SNR')
+        view.log.setChecked(False)
         view.update_snapshot(snapshot, 0)
         self.assertEqual(view._axes_key[1], 'SNR (×)')
         x, y = view._curves[0].getData()
@@ -289,11 +300,13 @@ class LiveUi(unittest.TestCase):
         view = self.page.multi_spectrum
         view.configure(['A', 'B'], [0, 1], 125)
         view.arrangement.setCurrentText('Grid')
-        view.minimum.setValue(12); view.maximum.setValue(18)
+        view.minimum.setValue(12)
+        view.maximum.setValue(18)
         view.update_snapshot(spectra_snapshot(np.stack([sine(), sine()]), 125), 0)
         self.assertEqual(view.frequency_range(), (12.0, 18.0))
         x, _ = view._curves[0].getData()
-        self.assertGreaterEqual(x.min(), 12); self.assertLessEqual(x.max(), 18)
+        self.assertGreaterEqual(x.min(), 12)
+        self.assertLessEqual(x.max(), 18)
         self.assertEqual(tuple(round(v, 1) for v in view._plots[0].vb.viewRange()[0]), (12.0, 18.0))
         view.maximum.setValue(200)                            # never beyond what fs can show
         self.assertEqual(view.frequency_range()[1], 62.5)
@@ -302,7 +315,8 @@ class LiveUi(unittest.TestCase):
         prefs = self.page.preferences
         before = {key: prefs.value(key) for key in prefs.allKeys()}
         try:
-            view.minimum.setValue(8); view.maximum.setValue(30)
+            view.minimum.setValue(8)
+            view.maximum.setValue(30)
             view.scale.setCurrentIndex(view.scale.findData('peak'))
             self.page.save_preferences()
             self.assertEqual(prefs.value('spectrum_min', type=float), 8)
@@ -317,7 +331,8 @@ class LiveUi(unittest.TestCase):
     def test_curves_glide_to_new_spectra_instead_of_jumping(self):
         view = self.page.multi_spectrum
         view.configure(['A'], [0], 125)
-        view.mode.setCurrentText('PSD'); view.log.setChecked(False)
+        view.mode.setCurrentText('PSD')
+        view.log.setChecked(False)
         low = spectra_snapshot(sine(10, 2)[None], 125)
         high = spectra_snapshot(sine(10, 20)[None], 125)
         view.update_snapshot(low, 0)
@@ -327,8 +342,10 @@ class LiveUi(unittest.TestCase):
         view.redraw()
         drawn = lambda: view._curves[0].getData()[1][np.argmin(abs(view._curves[0].getData()[0] - 10))]
         self.assertAlmostEqual(drawn(), start)                    # not drawn at once
-        view.animate(1.0); first = drawn()
-        view.animate(1.2); second = drawn()
+        view.animate(1.0)
+        first = drawn()
+        view.animate(1.2)
+        second = drawn()
         self.assertTrue(start < first < second < high['psd'][0, k])
         for now in np.arange(1.4, 4, .2):
             view.animate(now)
@@ -337,21 +354,26 @@ class LiveUi(unittest.TestCase):
     def test_layout_and_channel_detail(self):
         page = self.page
         self.assertFalse(page._wide)
-        page.resize(1920, 1080); self.app.processEvents()
+        page.resize(1920, 1080)
+        self.app.processEvents()
         self.assertTrue(page._wide)
-        page._tick(5); self.flush()
+        page._tick(5)
+        self.flush()
         page._show_channel(7)
         self.assertTrue(page.detail.isVisible())
         self.assertEqual(page.panel.psd_channel.currentIndex(), 7)
-        page.resize(1366, 768); self.app.processEvents()
+        page.resize(1366, 768)
+        self.app.processEvents()
         self.assertFalse(page._wide)
         self.assertEqual(page.view_tabs.count(), 2)
 
     def test_failed_connection_unlocks_controls(self):
-        page = self.page; page.stop(); page.panel.mode.setCurrentIndex(1)
+        page = self.page
+        page.stop()
+        page.panel.mode.setCurrentIndex(1)
         with patch('eeg.core.sources.LiveSource', side_effect=RuntimeError('port busy')), \
-             patch('eeg.ui.monitor.QtWidgets.QMessageBox.critical'), \
-             patch('eeg.ui.monitor.traceback.print_exc'):
+                patch('eeg.ui.monitor.QtWidgets.QMessageBox.critical'), \
+                patch('eeg.ui.monitor.traceback.print_exc'):
             page.start()
             self.assertTrue(page._starting)   # Start returned while the board opens
             self.flush()
@@ -384,17 +406,22 @@ class LiveUi(unittest.TestCase):
             page.spectral_jobs.active.clear()
 
     def test_successful_start_stop_and_reconnect_locks_source(self):
-        page = self.page; page.stop(); page.panel.mode.setCurrentIndex(1)
+        page = self.page
+        page.stop()
+        page.panel.mode.setCurrentIndex(1)
         source = Mock(fs=125)
         with patch('eeg.core.sources.LiveSource', return_value=source) as live:
-            page.start(); self.flush()
+            page.start()
+            self.flush()
             from eeg.ui.preferences import data_dir
             self.assertEqual(live.call_args.kwargs['record_dir'], data_dir())  # every live start is recorded
             self.assertEqual(live.call_args.kwargs['record_prefix'], 'live')
             self.assertTrue(page.timer.isActive())
             self.assertFalse(page.panel.port.isEnabled())
             page._ingest(np.tile(sine(), (16, 1)))
-            page.stop(); page.start(); self.flush()
+            page.stop()
+            page.start()
+            self.flush()
             self.assertEqual(page.raw_buffer.shape[1], 0)
             self.assertTrue(page.timer.isActive())
         page.stop()
@@ -402,11 +429,13 @@ class LiveUi(unittest.TestCase):
 
     def test_more_than_sixteen_channels_scroll_without_losing_quality(self):
         page = self.page
-        page.stop(); page.n_channels = 64
+        page.stop()
+        page.n_channels = 64
         names = [f'EEG{i+1}' for i in range(64)]
         page.panel.set_channels(names)
         page.panel.channel_button.set_selected(range(64))
-        page._reset_live_data(); page._resize_buffer()
+        page._reset_live_data()
+        page._resize_buffer()
         page.multi_spectrum.configure(names, list(range(64)), 125)
         self.assertEqual(page.quality_table.rowCount(), 64)
         self.assertEqual(len(page.multi_spectrum._curves), 64)
@@ -414,7 +443,8 @@ class LiveUi(unittest.TestCase):
 
     def test_live_source_releases_session_if_start_fails(self):
         from eeg.core.sources import LiveSource
-        board = Mock(); board.start_stream.side_effect = RuntimeError('failed')
+        board = Mock()
+        board.start_stream.side_effect = RuntimeError('failed')
         board.stop_stream.side_effect = RuntimeError('not running')
         with patch('brainflow.board_shim.BoardShim', return_value=board):
             with self.assertRaises(RuntimeError):
@@ -430,7 +460,8 @@ class LiveUi(unittest.TestCase):
         self.assertEqual(panel._channels, [6, 7])
         self.assertEqual(len(panel._curves), 2)
         self.assertEqual(panel.channel_menu_button.text(), 'Channels 2/8')
-        values = np.ones((8, 20)); values[0] = 1e6   # a loud hidden channel
+        values = np.ones((8, 20))
+        values[0] = 1e6   # a loud hidden channel
         panel.update_snapshot(dict(fft=values, fft_freqs=np.arange(20.0), psd=values,
                                    psd_freqs=np.arange(20.0), valid=np.ones(8, bool)), 0)
         self.assertLess(panel._bounds[1], 3)          # scale ignores hidden channels
@@ -459,7 +490,8 @@ class LiveUi(unittest.TestCase):
     def test_live_source_applies_hardware_after_reset_before_stream(self):
         from eeg.core import hardware as hw
         from eeg.core.sources import LiveSource
-        board = Mock(); board.config_board.return_value = 'Success: Channel set$$$'
+        board = Mock()
+        board.config_board.return_value = 'Success: Channel set$$$'
         settings = [hw.ChannelSetting(i < 8, False) for i in range(16)]
         with patch('brainflow.board_shim.BoardShim', return_value=board):
             source = LiveSource('COM7', settings)
@@ -474,7 +506,8 @@ class LiveUi(unittest.TestCase):
         source.configure(settings)
         self.assertEqual(board.config_board.call_count, 17)
         self.assertEqual(board.config_board.call_args_list[0], board.config_board.call_args_list[1])
-        board.reset_mock(); board.config_board.side_effect = None
+        board.reset_mock()
+        board.config_board.side_effect = None
         board.config_board.return_value = 'Failure: bad$$$'
         with self.assertRaises(RuntimeError):
             source.configure(settings)
@@ -484,7 +517,8 @@ class LiveUi(unittest.TestCase):
         from eeg.core import hardware as hw
         from eeg.core.boards import CYTON
         from eeg.core.sources import LiveSource
-        board = Mock(); board.config_board.return_value = 'daisy removed$$$'
+        board = Mock()
+        board.config_board.return_value = 'daisy removed$$$'
         settings = [hw.ChannelSetting(True, False) for _ in range(8)]
         with patch('brainflow.board_shim.BoardShim', return_value=board):
             LiveSource('COM7', settings, board=CYTON)
@@ -497,7 +531,8 @@ class LiveUi(unittest.TestCase):
         from pathlib import Path
         from eeg.core import hardware as hw
         from eeg.core.sources import LiveSource, hardware_log_path, load_brainflow_csv
-        board = Mock(); board.config_board.return_value = 'Success$$$'
+        board = Mock()
+        board.config_board.return_value = 'Success$$$'
         only_o = [hw.ChannelSetting(i in (6, 7), False) for i in range(16)]
         with tempfile.TemporaryDirectory() as tmp, \
                 patch('brainflow.board_shim.BoardShim', return_value=board):
@@ -518,7 +553,9 @@ class LiveUi(unittest.TestCase):
             # A second session in the same second gets its own files.
             self.assertNotEqual(LiveSource('COM7', only_o, record_dir=tmp).record_path, source.record_path)
             # The streamed layout is what the playback loader reads.
-            row = np.zeros(32); row[1:17] = np.arange(16); row[30] = 1.7e9
+            row = np.zeros(32)
+            row[1:17] = np.arange(16)
+            row[30] = 1.7e9
             np.savetxt(source.record_path, np.tile(row, (250, 1)), delimiter='\t')
             rec = load_brainflow_csv(source.record_path)
             self.assertEqual(rec.data.shape, (16, 250))
@@ -529,7 +566,9 @@ class LiveUi(unittest.TestCase):
         self.assertNotIn('add_streamer', [c[0] for c in board.method_calls])
 
     def test_apply_button_reconfigures_live_board_and_selects_on_channels(self):
-        page = self.page; page.stop(); page.panel.mode.setCurrentIndex(1)
+        page = self.page
+        page.stop()
+        page.panel.mode.setCurrentIndex(1)
         source = Mock(fs=125)
         import threading
         gui_thread = threading.get_ident()
@@ -542,8 +581,10 @@ class LiveUi(unittest.TestCase):
 
         source.configure.side_effect = slow_configure
         with patch('eeg.core.sources.LiveSource', return_value=source):
-            page.start(); self.flush()
-            page.panel.hardware.only(['O1', 'O2']); page.panel.hardware.no_bias()
+            page.start()
+            self.flush()
+            page.panel.hardware.only(['O1', 'O2'])
+            page.panel.hardware.no_bias()
             page.panel.hardware.apply_button.click()
             # The click returns at once: the window keeps running meanwhile.
             self.assertTrue(page._configuring)
@@ -551,7 +592,8 @@ class LiveUi(unittest.TestCase):
             reads = source.read.call_count
             page._tick()
             self.assertEqual(source.read.call_count, reads)   # no read blocks on the busy board
-            release.set(); self.flush()
+            release.set()
+            self.flush()
             self.assertFalse(page._configuring)
             thread, sent, previous = calls[0]
             self.assertNotEqual(thread, gui_thread)
@@ -560,9 +602,11 @@ class LiveUi(unittest.TestCase):
             self.assertEqual(list(page.panel.selected_channels), [6, 7])
             # Switching one more channel off passes what the board already has.
             page.panel.hardware.on_boxes[7].setChecked(False)
-            page.panel.hardware.apply_button.click(); self.flush()
+            page.panel.hardware.apply_button.click()
+            self.flush()
             self.assertEqual(calls[1][2], sent)
-            page.panel.hardware.resend_button.click(); self.flush()
+            page.panel.hardware.resend_button.click()
+            self.flush()
             self.assertIsNone(calls[2][2])                    # Resend all: no diff
             page.stop()
         page.panel.hardware.all_on()
@@ -595,7 +639,9 @@ class LiveUi(unittest.TestCase):
             log = hardware_log_path(source.record_path).read_text(encoding='utf-8')
             self.assertIn('Unicorn Hybrid Black: no channel settings', log)
             # A Unicorn CSV (19 columns) plays back at 250 Hz with its own names and rail.
-            row = np.zeros(19); row[:8] = np.arange(8); row[17] = 1.7e9
+            row = np.zeros(19)
+            row[:8] = np.arange(8)
+            row[17] = 1.7e9
             np.savetxt(source.record_path, np.tile(row, (500, 1)), delimiter='\t')
             rec = load_brainflow_csv(source.record_path)
             self.assertEqual((rec.data.shape, rec.fs, rec.rail_uv), ((8, 500), 250.0, 750_000.0))
@@ -604,7 +650,8 @@ class LiveUi(unittest.TestCase):
             self.assertEqual(rec.timestamps[0], 1.7e9)
 
     def test_unicorn_mode_starts_eight_channels_without_hardware_controls(self):
-        page = self.page; page.stop()
+        page = self.page
+        page.stop()
         page.panel.port.setText('COM9')
         page.panel.mode.setCurrentIndex(2)
         self.assertEqual(page.panel.board.key, 'unicorn')
@@ -616,7 +663,8 @@ class LiveUi(unittest.TestCase):
         page.panel.port.setText('UN-2021.05.36')
         source = Mock(fs=250)
         with patch('eeg.core.sources.LiveSource', return_value=source) as live:
-            page.start(); self.flush()
+            page.start()
+            self.flush()
             self.assertEqual(live.call_args[0][0], 'UN-2021.05.36')
             # The software choice travels to the recording's log; nothing is sent to the headset.
             chosen = live.call_args[0][1]
@@ -628,8 +676,10 @@ class LiveUi(unittest.TestCase):
             self.assertEqual(list(page.panel.selected_channels), list(range(8)))
             self.assertEqual(page._rail_uv, 750_000.0)
             page._ingest(np.tile(sine(fs=250), (8, 1)))
-            page.start_impedance(); page._apply_hardware()
-            source.impedance_step.assert_not_called(); source.configure.assert_not_called()
+            page.start_impedance()
+            page._apply_hardware()
+            source.impedance_step.assert_not_called()
+            source.configure.assert_not_called()
             page.stop()
         # The Cyton's port is kept apart from the Unicorn's serial.
         page.panel.mode.setCurrentIndex(1)
@@ -640,7 +690,8 @@ class LiveUi(unittest.TestCase):
 
     def test_apply_sends_only_changed_channels(self):
         from eeg.core import hardware as hw
-        board = Mock(); board.config_board.return_value = 'Success$$$'
+        board = Mock()
+        board.config_board.return_value = 'Success$$$'
         before = [hw.ChannelSetting(i in (6, 7), False) for i in range(16)]
         after = [hw.ChannelSetting(i == 6, False) for i in range(16)]
         sent = hw.apply_settings(board, after, before)

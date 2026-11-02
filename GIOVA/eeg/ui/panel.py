@@ -95,7 +95,9 @@ class ControlPanel(QtWidgets.QWidget):
         browse.clicked.connect(self._browse)
         form.addWidget(browse)
 
-        self.port = PortCombo(); self.port.setEditable(True); self.port.setMaximumWidth(150)
+        self.port = PortCombo()
+        self.port.setEditable(True)
+        self.port.setMaximumWidth(150)
         self.port.setCurrentText('COM7')
         #: what the connection box holds for each board: a COM port, a serial number
         self.addresses = {b.key: '' for b in BOARDS}
@@ -147,18 +149,26 @@ class ControlPanel(QtWidgets.QWidget):
         # drifts, and the drift is what the monitor has to stay readable
         # through.
         self.filters = FilterGroup(self.fs, low=3.0)
-        wrapper=QtWidgets.QWidget()
-        layout=QtWidgets.QVBoxLayout(wrapper);layout.setContentsMargins(0,0,0,0)
-        button=QtWidgets.QPushButton("Filter settings…");button.setCheckable(True)
+        wrapper = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(wrapper)
+        layout.setContentsMargins(0, 0, 0, 0)
+        button = QtWidgets.QPushButton("Filter settings…")
+        button.setCheckable(True)
         button.toggled.connect(self.filters.setVisible)
         layout.addWidget(button)
-        summary=QtWidgets.QLabel();summary.setWordWrap(True)
-        summary.setStyleSheet(muted());layout.addWidget(summary)
+        summary = QtWidgets.QLabel()
+        summary.setWordWrap(True)
+        summary.setStyleSheet(muted())
+        layout.addWidget(summary)
+
         def describe():
-            settings=self.filters.kwargs
-            summary.setText(f"Causal filters · {settings.get('low')}–{settings.get('high')} Hz · notch {settings.get('notches',[])} Hz")
+            settings = self.filters.kwargs
+            summary.setText(f"Causal filters · {settings.get('low')}–{settings.get('high')} Hz · "
+                            f"notch {settings.get('notches', [])} Hz")
         self.filters.changed.connect(describe)
-        layout.addWidget(self.filters);self.filters.hide();describe()
+        layout.addWidget(self.filters)
+        self.filters.hide()
+        describe()
         return wrapper
 
     def _display_group(self):
@@ -173,7 +183,8 @@ class ControlPanel(QtWidgets.QWidget):
         form.addRow("Window", self.window_seconds)
 
         self.auto_amplitude = QtWidgets.QCheckBox("Auto / channel")
-        self.auto_amplitude.setToolTip("Each channel has an independent display scale, shown beside its trace. Power calculations use the original microvolt samples.")
+        self.auto_amplitude.setToolTip("Each channel has an independent display scale, shown beside its trace. "
+                                       "Power calculations use the original microvolt samples.")
         self.auto_amplitude.setChecked(True)
         self.auto_amplitude.toggled.connect(self._sync_amplitude)
         self.amplitude = spin_box(1, 200_000, 100, 10, 0, " uV")

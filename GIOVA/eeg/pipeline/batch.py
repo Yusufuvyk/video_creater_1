@@ -299,7 +299,7 @@ def across(graphs, paths, progress=None, stop=None, limit=MEMORY_LIMIT):
             data_node, data_port, model_node, model_port = _cv_feeds(graph, node)
             params = graph.params(node)
             wanted = [c.strip() for c in (params["conditions"] if isinstance(params["conditions"], list)
-                                         else str(params["conditions"]).split(",")) if c.strip()]
+                                          else str(params["conditions"]).split(",")) if c.strip()]
             groups, held, model, reference = [], 0, None, None
             for i, (path, label) in enumerate(zip(paths, labels)):
                 if stop is not None and stop():
@@ -335,8 +335,8 @@ def across(graphs, paths, progress=None, stop=None, limit=MEMORY_LIMIT):
             if model is None or len(groups) < 2:
                 continue
             j = columns.index((graph.name, node))
-            for (name, *_), scores in zip(groups, learn.leave_one_out(groups, model, params["seed"], progress,
-                                                                      stop)):
+            for (name, *_), scores in zip(groups, learn.leave_one_out(
+                    groups, model, params["seed"], progress, stop)):
                 i = result.subjects.index(name)
                 result.scores[(name, columns[j])] = scores
                 accuracy[i, j] = scores.accuracy

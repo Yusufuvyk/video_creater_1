@@ -36,8 +36,8 @@ class RailButton(QtWidgets.QToolButton):
         self.setStyleSheet(
             "QToolButton {{ border: none; border-radius: 6px; padding: 0; }}"
             "QToolButton:hover {{ background: {hover}; }}"
-            "QToolButton:checked {{ background: {checked}; }}".format(hover=color("hover"),
-                                                                     checked=color("checked")))
+            "QToolButton:checked {{ background: {checked}; }}".format(
+                hover=color("hover"), checked=color("checked")))
         self.toggled.connect(lambda _on: self._paint_icon())
         self._paint_icon()
 

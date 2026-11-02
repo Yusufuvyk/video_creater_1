@@ -27,6 +27,8 @@ def marker_text(label):
     """
     text = " ".join(str(label).split("/")[-1].split())
     return text or " ".join(str(label).split())
+
+
 PSD_PEN = pg.mkPen("#1a7f5a", width=2)
 BAR_BRUSH = "#c0662b"
 
@@ -244,7 +246,7 @@ class TimeSeriesView(pg.PlotWidget):
         # already carries its own scale label.
         self.setMouseEnabled(x=False, y=False)
         self.getPlotItem().getViewBox().disableAutoRange()
-        self._curve = pg.PlotCurveItem(pen=TRACE_PEN,antialias=False)
+        self._curve = pg.PlotCurveItem(pen=TRACE_PEN, antialias=False)
         self.addItem(self._curve)
         self._layout = None      # what the axis is currently configured for
         self._note = ""
@@ -269,7 +271,8 @@ class TimeSeriesView(pg.PlotWidget):
         # Three plain items behind the traces, touched only when the lines move:
         # the axis grid this replaces repainted sixteen rows of ticks every frame.
         self._grid = {}
-        for name, colour, depth in (("minor", color("grid"), -32), ("zero", color("line"), -31), ("major", color("field"), -30)):
+        for name, colour, depth in (("minor", color("grid"), -32), ("zero", color("line"), -31),
+                                    ("major", color("field"), -30)):
             item = pg.PlotCurveItem(pen=pg.mkPen(colour, width=1), connect="pairs", antialias=False)
             item.setZValue(depth)
             self.addItem(item)

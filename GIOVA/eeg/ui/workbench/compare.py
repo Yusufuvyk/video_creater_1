@@ -92,7 +92,7 @@ class CompareWindow(QtWidgets.QDialog):
         drop = only(QtWidgets.QToolButton(), "minus", "Remove the pipeline selected")
         drop.clicked.connect(self._remove_pipeline)
         add_recordings = only(QtWidgets.QToolButton(), "plus", "Add recordings", more="Files, or every recording "
-                                                                                       "in a folder")
+                              "in a folder")
         add_recordings.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
         add_recordings.setStyleSheet("QToolButton::menu-indicator { image: none; width: 0; }")
         files = QtWidgets.QMenu(add_recordings)
@@ -267,7 +267,8 @@ class CompareWindow(QtWidgets.QDialog):
 
     def add_folder(self, folder=None):
         if folder is None:
-            folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Add every recording in a folder", str(data_dir()))
+            folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Add every recording in a folder",
+                                                                str(data_dir()))
             if not folder:
                 return
         found = sorted({p for pattern in RECORDING_PATTERNS for p in Path(folder).glob(pattern)

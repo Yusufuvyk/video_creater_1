@@ -146,7 +146,8 @@ class AnalysisTests(unittest.TestCase):
         full = interpolate(points, values, 1.0)
         inside = np.hypot(*np.meshgrid(np.linspace(-1, 1, full.shape[0]), np.linspace(-1, 1, full.shape[0]))) <= 1
         self.assertTrue(np.isfinite(full[inside]).all())
-        part = values.copy(); part[6:] = np.nan                # half the electrodes unmeasured
+        part = values.copy()
+        part[6:] = np.nan                # half the electrodes unmeasured
         limited = interpolate(points, part, 1.0, reach=.5)
         self.assertLess(np.isfinite(limited[inside]).mean(), .6)
 
@@ -173,7 +174,8 @@ class MonitorTests(unittest.TestCase):
                 self.assertEqual(status["Fp1"], "Switched off")
                 self.assertNotEqual(status["O1"], "Switched off")
             finally:
-                page.stop(); page.close()
+                page.stop()
+                page.close()
                 QtCore.QThreadPool.globalInstance().waitForDone(3000)
 
     def test_switched_off_channels_are_not_drawn(self):
@@ -216,7 +218,8 @@ class MonitorTests(unittest.TestCase):
                 self.assertIn("switched off", page.spectrum_view.plotItem.titleLabel.text)
                 self.assertEqual(len(page.spectrum_view._curve.getData()[0] or []), 0)
             finally:
-                page.stop(); page.close()
+                page.stop()
+                page.close()
                 QtCore.QThreadPool.globalInstance().waitForDone(3000)
 
 

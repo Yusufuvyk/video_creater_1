@@ -51,6 +51,8 @@ def tf_method(method, width=PER_HZ):
             raise ValueError("A wavelet's width is given as {} or {}".format(*WAVELET_WIDTHS))
         return MORLET if width == PER_HZ else CWT
     return method
+
+
 #: Frequencies a CWT is computed at, evenly from the lowest to the highest (as the lab's scalogram).
 CWT_FREQS = 128
 POOLED, MEAN_OF_TRIALS = "pooled", "mean_of_trials"
@@ -838,10 +840,12 @@ def statistics(result, condition_a, condition_b):
             rows.append(dict(channel=result.names[c], band=name, band_hz="{:g}-{:g}".format(low, high),
                              n_a=len(a), mean_a=float(a.mean()) if len(a) else np.nan,
                              sd_a=float(a.std(ddof=1)) if len(a) > 1 else np.nan,
-                             pooled_a=float(result.topo_pooled[name][condition_a][order[c]]) if condition_a in result.topo_pooled[name] else np.nan,
+                             pooled_a=(float(result.topo_pooled[name][condition_a][order[c]])
+                                       if condition_a in result.topo_pooled[name] else np.nan),
                              n_b=len(b), mean_b=float(b.mean()) if len(b) else np.nan,
                              sd_b=float(b.std(ddof=1)) if len(b) > 1 else np.nan,
-                             pooled_b=float(result.topo_pooled[name][condition_b][order[c]]) if condition_b in result.topo_pooled[name] else np.nan,
+                             pooled_b=(float(result.topo_pooled[name][condition_b][order[c]])
+                                       if condition_b in result.topo_pooled[name] else np.nan),
                              difference=(float(b.mean() - a.mean()) if len(a) and len(b) else np.nan),
                              cliffs_delta=cliffs_delta(a, b) if condition_a != condition_b else np.nan,
                              p_welch=p))
@@ -851,7 +855,8 @@ def statistics(result, condition_a, condition_b):
 def export_csv(path, result, source, condition_a, condition_b):
     """Long-form CSV of every number the page shows."""
     import csv
-    common = dict(recording=str(source), fs_hz=result.fs, settings=json.dumps(result.settings.to_dict(), sort_keys=True))
+    common = dict(recording=str(source), fs_hz=result.fs,
+                  settings=json.dumps(result.settings.to_dict(), sort_keys=True))
     headers = ["recording", "fs_hz", "settings", "section", "condition", "channel", "band", "x", "x_unit",
                "y", "value", "unit", "sem", "n", "epoch_id", "status", "onset_s",
                "mean_a", "sd_a", "pooled_a", "n_a", "mean_b", "sd_b", "pooled_b", "n_b",
@@ -881,11 +886,13 @@ def export_csv(path, result, source, condition_a, condition_b):
                     mean, sem, count = band_course(channel, cond, (low, high), result.settings.erd_mode)
                     for t, v, e in zip(channel.times, mean, sem):
                         writer.writerow(dict(common, section="band_erd_course", condition=cond, channel=channel.name,
-                                             band=name, x=t, x_unit="s", value=finite(v), unit="%", sem=finite(e), n=count))
+                                             band=name, x=t, x_unit="s", value=finite(v), unit="%", sem=finite(e),
+                                             n=count))
             for name in result.topo_pooled:
                 for slot, c in enumerate(result.topo_channels):
-                    writer.writerow(dict(common, section="topography_pooled_erd", condition=cond, channel=result.names[c],
-                                         band=name, value=finite(result.topo_pooled[name][cond][slot]), unit="%", n=n))
+                    writer.writerow(dict(common, section="topography_pooled_erd", condition=cond,
+                                         channel=result.names[c], band=name,
+                                         value=finite(result.topo_pooled[name][cond][slot]), unit="%", n=n))
         for row in statistics(result, condition_a, condition_b):
             writer.writerow(dict(common, section="statistics", channel=row["channel"], band=row["band"],
                                  condition_a=condition_a, condition_b=condition_b, unit="%",

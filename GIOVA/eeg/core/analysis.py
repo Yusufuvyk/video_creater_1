@@ -171,7 +171,7 @@ def stft_tfr(signal, fs, window_seconds=2.0, overlap=0.5, fmin=1.0, fmax=45.0):
         raise ValueError("segment too short to transform")
 
     from .spectral import welch_sizes
-    nperseg,noverlap = welch_sizes(signal.size,fs,window_seconds,overlap)
+    nperseg, noverlap = welch_sizes(signal.size, fs, window_seconds, overlap)
 
     freqs, times, power = spectrogram(
         signal, fs=fs, nperseg=nperseg, noverlap=noverlap,
@@ -233,7 +233,6 @@ def welch_spectrum(signal, fs, window_seconds=2.0, overlap=0.5, fmin=1.0,
     keep = (freqs >= fmin) & (freqs <= fmax)
     return Spectrum(WELCH, freqs[keep], power[keep], tfr.power.std(axis=1),
                     tfr.n_frames, "uV^2/Hz", tfr.frame_seconds)
-
 
 
 def compute(signal, fs, method=WELCH, window_seconds=2.0, overlap=0.5,
@@ -321,8 +320,6 @@ def smooth_power(power, step, smooth_seconds):
     return uniform_filter1d(power, size=width, axis=-1, mode="nearest")
 
 
-
-
 def average_spectrum(tfr, window=None):
     """Mean spectrum across frames, with the spread between them.
 
@@ -351,7 +348,6 @@ def band_powers(result, window=None):
     if isinstance(result, TimeFrequency) and result.units != "uV^2/Hz":
         raise ValueError("Wavelet power is not PSD; use its time-frequency power view")
     return {name: band_integral(freqs, mean, low, high) for name, low, high in BANDS}
-
 
 
 # ----------------------------------------------------------------------
@@ -480,7 +476,6 @@ def epoch_stack(tfr, epochs, n_points=240, smooth_seconds=DEFAULT_SMOOTH_SECONDS
         raise ValueError(epoch_problem(tfr, epochs, edge_margin)
                          or "no usable epochs")
     return grid, np.stack(blocks), np.stack(references)[:, :, np.newaxis]
-
 
 
 def _percent(power, reference):

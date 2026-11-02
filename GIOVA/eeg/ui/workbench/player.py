@@ -250,4 +250,3 @@ class PlayerWindow(QtWidgets.QWidget):
     def closeEvent(self, event):
         self.timer.stop()
         super().closeEvent(event)
-

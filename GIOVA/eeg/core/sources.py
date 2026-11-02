@@ -183,7 +183,8 @@ def _csv_board(path, frame, board_id):
     else:
         board = boards.for_csv_columns(frame.shape[1])
     if frame.shape[1] != board.n_rows:
-        raise ValueError("{} requires {} columns, but this file has {}".format(board.label, board.n_rows, frame.shape[1]))
+        raise ValueError("{} requires {} columns, but this file has {}".format(
+            board.label, board.n_rows, frame.shape[1]))
     rate = estimated_rate(frame.iloc[:, board.timestamp_row])
     if rate is not None and abs(rate / board.fs - 1) >= .1:
         raise ValueError("Recording clock does not match the {} Hz device rate".format(board.fs))

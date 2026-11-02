@@ -80,7 +80,9 @@ class ChannelProfileDialog(QtWidgets.QDialog):
             bias.toggled.connect(self._check)
             for column, widget in enumerate((label, electrode, self._centred(on), self._centred(bias))):
                 self.table.setCellWidget(pin, column, widget)
-            self.electrodes.append(electrode); self.on_boxes.append(on); self.bias_boxes.append(bias)
+            self.electrodes.append(electrode)
+            self.on_boxes.append(on)
+            self.bias_boxes.append(bias)
         right.addWidget(self.table, 1)
 
         self.message = QtWidgets.QLabel("")

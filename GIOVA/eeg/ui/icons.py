@@ -10,7 +10,8 @@ Lucide 0.468.0 (https://lucide.dev), the subset reviewed in BioTrace_UI_Icons_Pr
 
     ISC License
 
-    Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
+    Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT).
+    All other copyright (c) for Lucide are held by Lucide Contributors 2022.
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose with or without fee is hereby granted, provided that the above
@@ -214,10 +215,6 @@ SHAPES = {
         '3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 '
         '0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258'
         '-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" />'
-    ),
-    'folder': (
-        '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0'
-        '-2 2v13a2 2 0 0 0 2 2Z" />'
     ),
     'blocks': (
         '<rect width="7" height="7" x="14" y="3" rx="1" /> <path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1'

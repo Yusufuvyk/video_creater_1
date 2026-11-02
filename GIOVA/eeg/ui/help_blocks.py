@@ -225,7 +225,6 @@ def _items(lines):
     return "<ul>" + "".join("<li>{}</li>".format(html.escape(line)) for line in lines) + "</ul>"
 
 
-
 def _only_with(kind, param):
     """For a setting the Workbench shows only with certain values of others: " (with Method stft)", " (not with
     Method wavelet, Head map and statistics from maps)"; else ""."""
@@ -247,7 +246,7 @@ def page(type_name):
     does, use, cannot = BLOCKS[type_name]
     parts = ["<h2>{}</h2>".format(html.escape(kind.title)),
              '<p class="note">{}</p>'.format(html.escape(GROUPS.get(kind.category, "") and
-                                                          GROUPS[kind.category] + " › ") + html.escape(kind.category)),
+                                                         GROUPS[kind.category] + " › ") + html.escape(kind.category)),
              "<p>{}</p>".format(html.escape(does)),
              "<table><tr><th>In</th><td>{}</td></tr><tr><th>Out</th><td>{}</td></tr></table>".format(
                  ports(kind, "inputs"), ports(kind, "outputs")),

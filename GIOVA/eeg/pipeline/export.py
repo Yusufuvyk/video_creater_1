@@ -43,7 +43,8 @@ LEARN = "eeg.pipeline.learn"
 
 #: block type -> the function in pipeline.compute it runs
 FUNCTIONS = {
-    "units": "convert_units", "channels": "pick_channels", "bad_channels": "repair_channels", "reference": "rereference",
+    "units": "convert_units", "channels": "pick_channels", "bad_channels": "repair_channels",
+    "reference": "rereference",
     "filter": "filter_recording", "resample": "downsample_recording", "ica": "run_ica", "epochs": "cut_epochs",
     "window": "time_window", "trial_filter": "filter_trials", "select_trials": "select_trials",
     "wavelet_denoise": "wavelet_denoise", "dwt_bands": "dwt_bands", "filter_bank": "filter_bank",
@@ -167,8 +168,8 @@ def step_code(kind, params):
     if kind == "svm":
         grid = learn.svm_grid(p["kernel"], p.get("C_values", learn.C_GRID), p.get("gamma_values", learn.GAMMA_GRID))
         estimator = "SVC(kernel={!r}, C={!r}, gamma={!r})".format(p["kernel"], float(p["C"]),
-                                                               learn._gamma(p.get("gamma", "scale"))
-                                                               if p["kernel"] == "rbf" else "scale")
+                                                                  learn._gamma(p.get("gamma", "scale"))
+                                                                  if p["kernel"] == "rbf" else "scale")
         imports = ["from sklearn.svm import SVC"]
     elif kind == "logistic":
         l1 = p["penalty"] == "l1"
@@ -284,7 +285,7 @@ def _parts(graph):
             args += _changed(graph, node_id)
         roots.append((COMPUTE, function))
         body.append("    {} = {}({}){}".format(targets, function, ", ".join(args),
-                                                  "  # not wired on the sheet: " + ", ".join(unwired) if unwired else ""))
+                                               "  # not wired on the sheet: " + ", ".join(unwired) if unwired else ""))
         body.append("")
     every = [name for n in _ordered(graph) if n not in models or n in used for name in variables[n].values()]
     body.append("    return dict({})".format(", ".join("{0}={0}".format(v) for v in every)))

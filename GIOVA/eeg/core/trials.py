@@ -284,9 +284,9 @@ def analyze(data, fs, channel_index, channel_name, trials, settings, rail_uv=Non
         conditions.append(ConditionResult(name, [r.trial.id for r in group], signal,
                                           of_mean, averaged, channel_means))
     result = AnalysisResult(float(fs), channel_name, settings,
-                          np.arange(accepted[0].signal.size) / fs,
-                          accepted, conditions, rejected,
-                          channels=list(indices))
+                            np.arange(accepted[0].signal.size) / fs,
+                            accepted, conditions, rejected,
+                            channels=list(indices))
     peaks = np.array([np.ptp(t.channel_signals, axis=1).max() if roi else np.ptp(t.signal)
                       for t in accepted])
     median = np.median(peaks)

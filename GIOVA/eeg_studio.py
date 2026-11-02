@@ -45,7 +45,9 @@ def selftest():
         board = BoardShim(BoardIds.SYNTHETIC_BOARD, BrainFlowInputParams())
         board.prepare_session()
         board.add_streamer("file://{}:w".format(path))
-        board.start_stream(); time.sleep(1.5); board.stop_stream()
+        board.start_stream()
+        time.sleep(1.5)
+        board.stop_stream()
         board.release_session()
         rec = load_brainflow_csv(path, board_id=BoardIds.SYNTHETIC_BOARD)
         assert rec.data.shape[1] > 50, rec.data.shape
@@ -196,7 +198,10 @@ def selftest():
         from eeg.ui.app import MainWindow, use_light_theme
         app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
         use_light_theme(app)
-        w = MainWindow(); w.show(); app.processEvents(); w.close()
+        w = MainWindow()
+        w.show()
+        app.processEvents()
+        w.close()
         from eeg.core.config import DATA_DIR
         return "data folder {}".format(DATA_DIR)
 

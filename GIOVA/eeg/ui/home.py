@@ -1,8 +1,9 @@
 """Home: where GIOVA starts - choose a mode, continue where you left off, or start a task.
 
-Three parts on one page: the modes as cards (Quick analysis among them, which opens on the Workbench); "Continue", the recordings, pipelines
-(with their last accuracy) and reports used last, one click from reopening; and "Start a
-task", the usual jobs, each opening the right mode already set up. Nothing on it moves.
+Three parts on one page: the modes as cards (Quick analysis among them, which opens on the Workbench);
+"Continue", the recordings, pipelines (with their last accuracy) and reports used last, one click from
+reopening; and "Start a task", the usual jobs, each opening the right mode already set up. Nothing on it
+moves.
 
 The program opens straight into the mode used last (unless that is switched off here), and
 Home stays one click away in the header.
@@ -228,8 +229,8 @@ class HomePage(QtWidgets.QWidget):
                 widget.setParent(None)        # gone from the page now, not at the next event loop
                 widget.deleteLater()
         for kind, title, empty in ((recent.RECORDINGS, "Recordings", "A recording opened anywhere shows here."),
-                                   (recent.PIPELINES, "Pipelines", "A pipeline saved or opened on the Workbench, "
-                                                                   "with its last accuracy."),
+                                   (recent.PIPELINES, "Pipelines",
+                                    "A pipeline saved or opened on the Workbench, with its last accuracy."),
                                    (recent.REPORTS, "Reports", "A report saved from the Workbench or Compare.")):
             label = QtWidgets.QLabel(title)
             label.setStyleSheet("color: {}; font-weight: 600; margin-top: 6px;".format(color("subtle")))

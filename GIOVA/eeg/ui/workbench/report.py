@@ -141,8 +141,8 @@ def ask_path(parent, suggested):
 
     A name typed without an extension gets the chosen format's.
     """
-    path, chosen = QtWidgets.QFileDialog.getSaveFileName(parent, "Save report", str(Path(suggested).with_suffix(".pdf")),
-                                                         FORMATS)
+    path, chosen = QtWidgets.QFileDialog.getSaveFileName(parent, "Save report",
+                                                         str(Path(suggested).with_suffix(".pdf")), FORMATS)
     if not path:
         return None
     path = Path(path)
@@ -243,7 +243,8 @@ class Report:
              "padding-bottom: 4px; margin-top: 28px; } h3 { color: #1b2140; margin-bottom: 4px; } "
              "table { border-collapse: collapse; margin: 6px 0 10px 0; } th, td { border: 1px solid #dde1e6; "
              "padding: 3px 8px; text-align: left; } th { background: #f4f6f8; } .note { color: #57606a; } "
-             "pre { background: #f6f7f9; padding: 8px; font-size: 9pt; white-space: pre-wrap; } img { max-width: 100%; }")
+             "pre { background: #f6f7f9; padding: 8px; font-size: 9pt; white-space: pre-wrap; } "
+             "img { max-width: 100%; }")
 
     def to_html(self):
         def data_uri(_index, image):
@@ -388,7 +389,7 @@ def _pipeline_report(graph, outputs, canvas=None):
     report = Report(graph.name)
     files = sorted({graph.params(n)["path"] for n in graph.sources("load") if graph.params(n)["path"]})
     report.paragraph("{} · GIOVA 3.1 · {}".format(datetime.now().strftime("%d %B %Y, %H:%M"),
-                                                      ", ".join(files) or "no recording"), note=True)
+                                                  ", ".join(files) or "no recording"), note=True)
     if graph.description:
         report.paragraph(graph.description)
     _profile(report, graph)
@@ -525,8 +526,8 @@ def comparison_plot(result, measure="accuracy"):
             plot.plot([j + 0.22] * 2, [mean - half, mean + half], pen=pg.mkPen(colour, width=2))
         plot.plot([j + 0.1, j + 0.34], [mean, mean], pen=pg.mkPen(colour, width=4))
         tips = ["{} · {} · {} {}{}".format(Path(result.subjects[i]).stem, name, title,
-                                            batch.shown(accuracy[i, j], measure),
-                                            " (above chance)" if result.better(i, j) else "") for i in rows]
+                                           batch.shown(accuracy[i, j], measure),
+                                           " (above chance)" if result.better(i, j) else "") for i in rows]
         points = pg.ScatterPlotItem(x=x[rows, j], y=values, size=9, data=tips,
                                     brush=pg.mkBrush(colour), pen=pg.mkPen(plot_background(), width=1),
                                     hoverable=True, hoverSize=13, tip=lambda x, y, data: data)
@@ -554,7 +555,6 @@ def comparison_report(result, recordings_note=""):
         raise ValueError("These results do not say which pipelines produced them: run the comparison again")
     with paper():
         return _comparison_report(result, result.graphs, recordings_note)
-
 
 
 #: The Methods sentence of a Cross-validate block run under Across, in place of its own.

@@ -68,15 +68,21 @@ class CoreTests(unittest.TestCase):
         f = np.arange(10, 20, .5)
         rng = np.random.default_rng(0)
         base = np.exp(rng.normal(0, .2, (5, f.size)))
-        line = base.copy(); line[:, f == 15] *= 20
+        line = base.copy()
+        line[:, f == 15] *= 20
         line[:, (f == 14.5) | (f == 15.5)] *= 5                  # Hann leakage beside the line
-        noisy = base.copy(); noisy[:, f == 15] *= np.exp([[-1.5], [1.5], [-1.5], [1.5], [0]])
+        noisy = base.copy()
+        noisy[:, f == 15] *= np.exp([[-1.5], [1.5], [-1.5], [1.5], [0]])
         self.assertNotEqual(f[np.nanargmax(condition_contrast(line, noisy))], 15)   # per-bin SD misses it
         self.assertEqual(f[np.nanargmax(condition_contrast(line, noisy, f))], 15)
 
     def test_strongest_frequencies_keeps_peaks_apart(self):
         f = np.arange(0, 30, .5)
-        v = np.zeros_like(f); v[f == 10] = 5; v[f == 10.5] = 4.9; v[f == 20] = 3; v[f == 25] = 1
+        v = np.zeros_like(f)
+        v[f == 10] = 5
+        v[f == 10.5] = 4.9
+        v[f == 20] = 3
+        v[f == 25] = 1
         self.assertEqual(strongest_frequencies(f, v, 1, 30, count=3), [(10.0, 5.0), (20.0, 3.0), (25.0, 1.0)])
         self.assertEqual(strongest_frequencies(f, v, 1, 15, count=2)[0], (10.0, 5.0))
 

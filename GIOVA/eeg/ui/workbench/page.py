@@ -247,7 +247,7 @@ class WorkbenchPage(QtWidgets.QWidget):
         # icons alone: the name and shortcut on hover; Run keeps its word
         new = QtWidgets.QToolButton()
         only(new, "plus", "New", more="Replace this tab's sheet: empty, or one of the two pipelines saved last; "
-                                       "+ beside the tabs opens a new tab instead")
+             "+ beside the tabs opens a new tab instead")
         new.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
         new.setStyleSheet("QToolButton::menu-indicator { image: none; width: 0; }")
         new.setMenu(self._new_menu(new, lambda: self.new_pipeline(None), self.open_pipeline))
@@ -276,7 +276,7 @@ class WorkbenchPage(QtWidgets.QWidget):
         compare.clicked.connect(lambda: self.open_compare())
         report = QtWidgets.QToolButton()
         only(report, "file-text", "Report", more="The pipeline, its methods and every result: PDF, Word, web page, "
-                                                  "or only the figures as PNG")
+             "or only the figures as PNG")
         report.clicked.connect(lambda: self.save_report())
         python = QtWidgets.QToolButton()
         only(python, "code-xml", "Python", more="The pipeline as Python that runs without GIOVA and computes "
@@ -842,7 +842,7 @@ class WorkbenchPage(QtWidgets.QWidget):
             recent.remember(recent.RECORDINGS, path)
             self.run()
         self._say("Quick analysis of {} with '{}'.{}".format(Path(path).name if path else "no recording",
-                                                            profile.name, " " + " ".join(notes) if notes else ""))
+                                                             profile.name, " " + " ".join(notes) if notes else ""))
         return sheet
 
     def import_session(self, path, recording=None):

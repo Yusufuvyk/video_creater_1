@@ -110,7 +110,7 @@ class FilterTests(unittest.TestCase):
             zero = fl.apply(x, self.fs, fl.steps(self.fs, {**base, "design": design}), "zero")
             causal = fl.apply(x, self.fs, fl.steps(self.fs, {**base, "design": design}), "causal")
             reference = fl.apply(x, self.fs, fl.steps(self.fs, {**base, "low": 7.0, "high": 31.0,
-                                                               "design": design}), "zero")
+                                                                "design": design}), "zero")
             lag = lambda a: int(np.argmax(np.correlate(a[2000:-2000], reference[2000:-2000], "same"))) - \
                 (len(a) - 4000) // 2
             self.assertEqual(lag(zero), 0, design)

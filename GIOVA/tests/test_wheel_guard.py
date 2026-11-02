@@ -35,15 +35,24 @@ class WheelGuardTests(unittest.TestCase):
         area = QtWidgets.QScrollArea()
         inner = QtWidgets.QWidget()
         column = QtWidgets.QVBoxLayout(inner)
-        spin = QtWidgets.QDoubleSpinBox(); spin.setRange(0, 100); spin.setValue(50)
-        combo = QtWidgets.QComboBox(); combo.addItems(["a", "b", "c"]); combo.setCurrentIndex(1)
-        slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal); slider.setRange(0, 100)
+        spin = QtWidgets.QDoubleSpinBox()
+        spin.setRange(0, 100)
+        spin.setValue(50)
+        combo = QtWidgets.QComboBox()
+        combo.addItems(["a", "b", "c"])
+        combo.setCurrentIndex(1)
+        slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        slider.setRange(0, 100)
         slider.setValue(50)
-        tabs = QtWidgets.QTabBar(); [tabs.addTab(t) for t in "xyz"]; tabs.setCurrentIndex(1)
+        tabs = QtWidgets.QTabBar()
+        [tabs.addTab(t) for t in "xyz"]
+        tabs.setCurrentIndex(1)
         for widget in (spin, combo, slider, tabs):
             column.addWidget(widget)
         column.addSpacing(3000)             # tall enough to scroll
-        area.setWidget(inner); area.resize(300, 300); area.show()
+        area.setWidget(inner)
+        area.resize(300, 300)
+        area.show()
         app.processEvents()
         return area, spin, combo, slider, tabs
 
@@ -60,14 +69,20 @@ class WheelGuardTests(unittest.TestCase):
 
     def test_scroll_bars_still_scroll(self):
         bar = QtWidgets.QScrollBar(QtCore.Qt.Orientation.Vertical)
-        bar.setRange(0, 100); bar.resize(20, 200); bar.show(); app.processEvents()
+        bar.setRange(0, 100)
+        bar.resize(20, 200)
+        bar.show()
+        app.processEvents()
         roll(bar)
         self.assertGreater(bar.value(), 0)
         bar.close()
 
     def test_plots_still_zoom(self):
         import pyqtgraph as pg
-        plot = pg.PlotWidget(); plot.setXRange(0, 10, padding=0); plot.resize(400, 300); plot.show()
+        plot = pg.PlotWidget()
+        plot.setXRange(0, 10, padding=0)
+        plot.resize(400, 300)
+        plot.show()
         app.processEvents()
         before = plot.getViewBox().viewRange()[0]
         roll(plot.viewport())
@@ -108,12 +123,12 @@ class WheelGuardTests(unittest.TestCase):
             app.installEventFilter(app._wheel_guard)
 
 
-
 class TooltipSwitchTests(unittest.TestCase):
     def test_switch_swallows_tooltips_only_when_off(self):
         from eeg.ui.widgets import install_tooltip_switch
         switch = install_tooltip_switch(app, True)
-        button = QtWidgets.QPushButton("x"); button.setToolTip("help")
+        button = QtWidgets.QPushButton("x")
+        button.setToolTip("help")
         event = QtGui.QHelpEvent(QtCore.QEvent.Type.ToolTip, QtCore.QPoint(1, 1), QtCore.QPoint(1, 1))
         self.assertFalse(switch.eventFilter(button, event))
         self.assertIs(install_tooltip_switch(app, False), switch)      # one filter, re-used

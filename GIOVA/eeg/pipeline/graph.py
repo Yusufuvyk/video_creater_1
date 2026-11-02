@@ -243,8 +243,8 @@ class Graph:
                 out = block(self.nodes[previous].type).outputs[0]
                 accepting = [p for p in block(type_name).inputs if out.types[0] in p.types]
                 if not accepting:
-                    raise ValueError("{} cannot follow {}".format(block(type_name).title,
-                                                                  block(self.nodes[previous].type).title))
+                    raise ValueError("{} cannot follow {}".format(
+                        block(type_name).title, block(self.nodes[previous].type).title))
                 self.connect(previous, out.name, node_id, accepting[0].name)
             ids.append(node_id)
             previous = node_id
@@ -407,7 +407,8 @@ class Graph:
         """The report's methods text: one sentence per block, the signal's path first, then the model.
         `instead`: {node: text} for blocks run otherwise than they say (Cross-validate under Across)."""
         instead = instead or {}
-        steps = sorted(self.order(), key=lambda n: self._learning(n) or block(self.nodes[n].type).outputs[0].types[0] == SCORES)
+        steps = sorted(self.order(), key=lambda n: (self._learning(n)
+                                                    or block(self.nodes[n].type).outputs[0].types[0] == SCORES))
         return [instead[n] if n in instead else block(self.nodes[n].type).describe_in(self, n) for n in steps]
 
     def _learning(self, node_id):
@@ -526,8 +527,8 @@ class Runner:
                     raise PipelineError(node_id, "{}: {}".format(node.label or kind.title, exc)) from exc
                 except Exception as exc:
                     # anything else still belongs to this block: marked on it, not only in the status line
-                    raise PipelineError(node_id, "{}: {}: {}".format(node.label or kind.title, type(exc).__name__,
-                                                                     exc)) from exc
+                    raise PipelineError(node_id, "{}: {}: {}".format(
+                        node.label or kind.title, type(exc).__name__, exc)) from exc
                 self.cache[key] = outputs
             self.keys[node_id] = key
             results[node_id] = outputs

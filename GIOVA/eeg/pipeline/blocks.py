@@ -115,7 +115,7 @@ class Load(Block):
             text += " Events renamed: {}.".format(", ".join(n.replace("=", " → ", 1) for n in _names(params["rename"])))
         if params["shift_ms"]:
             text += " Every event moved {:g} ms {}.".format(abs(params["shift_ms"]),
-                                                           "later" if params["shift_ms"] > 0 else "earlier")
+                                                            "later" if params["shift_ms"] > 0 else "earlier")
         return text
 
 
@@ -842,7 +842,7 @@ class CompareWindows(Block):
 
     def short(self, params):
         return "{} {:g}–{:g} s vs {} {:g}–{:g} s".format(params["name_a"], *params["window_a"], params["name_b"],
-                                                       *params["window_b"])
+                                                         *params["window_b"])
 
     def describe(self, params):
         bands = ", ".join("{} {:g}–{:g} Hz".format(*b) for b in params["bands"])
@@ -973,7 +973,7 @@ class TimeFrequency(Block):
                          else "the first condition of the trials")
             return ("{} time-frequency power {}, {}; ERD/ERS as % change from the mean power of "
                     "{} in the {:g}–{:g} s window.{}{}".format(method, span, smooth, reference,
-                                                              *params["active"], average, reject))
+                                                               *params["active"], average, reject))
         return ("{} time-frequency power {}, {}; ERD/ERS as % change from the {:g}–{:g} s "
                 "baseline.{}{}".format(method, span, smooth, *params["baseline"], average, reject))
 
@@ -1083,7 +1083,7 @@ class TRCSPStep(_Step):
 
     def short(self, params):
         return "{} + {} filters · {}".format(params["n_filters"], params["n_filters"],
-                                            "alpha tuned" if params["tune"] else "alpha " + params["alpha"])
+                                             "alpha tuned" if params["tune"] else "alpha " + params["alpha"])
 
     def describe(self, params):
         alpha = ("alpha chosen from 1e-10 to 1e-1 by {}-fold cross-validation inside each training fold "

@@ -54,7 +54,9 @@ class RecordingSettings(QtWidgets.QWidget):
         browse.clicked.connect(self._choose)
         show = QtWidgets.QPushButton("Open")
         show.clicked.connect(lambda: reveal(self.folder.text()))
-        row.addWidget(self.folder, 1); row.addWidget(browse); row.addWidget(show)
+        row.addWidget(self.folder, 1)
+        row.addWidget(browse)
+        row.addWidget(show)
         layout.addRow("Folder", row)
 
         self.prefix = QtWidgets.QLineEdit(str(setting('recording/prefix')))

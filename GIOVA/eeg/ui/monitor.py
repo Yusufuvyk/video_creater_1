@@ -213,27 +213,34 @@ class MonitorPage(QtWidgets.QWidget):
         root = QtWidgets.QVBoxLayout(self)
         top = QtWidgets.QHBoxLayout()
         top.addWidget(self.panel.source_bar, 1)
-        settings = QtWidgets.QPushButton('Controls'); settings.setCheckable(True)
+        settings = QtWidgets.QPushButton('Controls')
+        settings.setCheckable(True)
         settings.setToolTip('Show or hide the controls: source and board, channel profile, filters, '
                             'channels and the trace window. Thresholds and folders are in Settings.')
         top.addWidget(settings)
         root.addLayout(top)
         self.connection_label = QtWidgets.QLabel('Stopped · no data')
-        self.connection_label.setStyleSheet('padding: 5px; background: {}; color: {};'.format(color('panel'), color('panel_text')))
+        self.connection_label.setStyleSheet('padding: 5px; background: {}; color: {};'.format(
+            color('panel'), color('panel_text')))
         root.addWidget(self.connection_label)
         # Side panels are dragged wider or narrower; their widths are remembered.
-        body = ResizableSide('monitor/side', self.preferences); root.addWidget(body, 1)
+        body = ResizableSide('monitor/side', self.preferences)
+        root.addWidget(body, 1)
         left = QtWidgets.QWidget()
-        side = QtWidgets.QVBoxLayout(left); side.setContentsMargins(0, 0, 0, 0)
+        side = QtWidgets.QVBoxLayout(left)
+        side.setContentsMargins(0, 0, 0, 0)
         side.addWidget(self.quality_table, 1)
         choose = QtWidgets.QHBoxLayout()
         choose.addWidget(QtWidgets.QLabel('Graphs:'))
         for label, callback in [('All', lambda: self.panel.channel_button.set_selected(range(self.n_channels))),
                                 ('Clear', lambda: self.panel.channel_button.set_selected([]))]:
-            button = QtWidgets.QPushButton(label); button.clicked.connect(callback); choose.addWidget(button)
+            button = QtWidgets.QPushButton(label)
+            button.clicked.connect(callback)
+            choose.addWidget(button)
         side.addLayout(choose)
         note = QtWidgets.QLabel('Click a channel for details. Signal checks are not impedance measurements.')
-        note.setWordWrap(True); side.addWidget(note)
+        note.setWordWrap(True)
+        side.addWidget(note)
         # Folds to a strip at the left edge when the traces need the room.
         self.quality_pane = Collapsible('ALL CHANNELS · RAW SIGNAL QUALITY', left, 'monitor/quality_pane',
                                         self.preferences, side='left')
@@ -244,12 +251,13 @@ class MonitorPage(QtWidgets.QWidget):
         self.chart_splitter.setChildrenCollapsible(False)
         charts = QtWidgets.QWidget()
         column = QtWidgets.QVBoxLayout(charts)
-        column.setContentsMargins(0,0,0,0)
+        column.setContentsMargins(0, 0, 0, 0)
         self.time_scroll = QtWidgets.QScrollArea()
         self.time_scroll.setWidgetResizable(True)
         self.time_scroll.setWidget(self.time_view)
         self.time_scroll.setMinimumHeight(180)
-        self.time_scroll.setToolTip("Scroll inside the signal panel to inspect more channels. Each row shows its microvolt scale.")
+        self.time_scroll.setToolTip("Scroll inside the signal panel to inspect more channels. Each row shows its "
+                                    "microvolt scale.")
         # Either view can be popped out into its own window (e.g. the spectrum on
         # a second monitor); closing that window brings it back.
         # The motion sensor sits under the traces, on the same time axis, and
@@ -258,7 +266,8 @@ class MonitorPage(QtWidgets.QWidget):
         self.motion_view.toggle.setChecked(self.preferences.value('motion_shown', True, type=bool))
         self.signals_page = QtWidgets.QWidget()
         signals_box = QtWidgets.QVBoxLayout(self.signals_page)
-        signals_box.setContentsMargins(0, 0, 0, 0); signals_box.setSpacing(0)
+        signals_box.setContentsMargins(0, 0, 0, 0)
+        signals_box.setSpacing(0)
         signals_box.addWidget(self.time_scroll, 1)
         signals_box.addWidget(self.motion_view)
         self.view_tabs = DetachableTabs('monitor/views', self.preferences)
@@ -273,13 +282,17 @@ class MonitorPage(QtWidgets.QWidget):
         self.wide_slots = {}
         for name in ('Signals', 'Spectrum'):
             slot = QtWidgets.QWidget()
-            box = QtWidgets.QVBoxLayout(slot); box.setContentsMargins(0, 0, 0, 0); box.setSpacing(0)
+            box = QtWidgets.QVBoxLayout(slot)
+            box.setContentsMargins(0, 0, 0, 0)
+            box.setSpacing(0)
             head = QtWidgets.QWidget()
-            header = QtWidgets.QHBoxLayout(head); header.setContentsMargins(0, 0, 0, 0)
+            header = QtWidgets.QHBoxLayout(head)
+            header.setContentsMargins(0, 0, 0, 0)
             # Drag the title out, as a tab, to give the view its own window.
             title = DragTab(name, lambda point, _press, n=name: self.view_tabs.begin_drag(n, point))
             title.setToolTip("Drag out to open in its own window")
-            header.addWidget(title); header.addStretch()
+            header.addWidget(title)
+            header.addStretch()
             pop = pop_out_button(slot)
             pop.clicked.connect(lambda _=False, n=name: self.view_tabs.pop_out(n))
             header.addWidget(pop)
@@ -298,29 +311,34 @@ class MonitorPage(QtWidgets.QWidget):
             self.wide_slots[name] = slot
         self._spectrum_collapsed = self.preferences.value('monitor/spectrum_collapsed', False, type=bool)
         self._wide_sizes = None
-        self.wide_container.hide(); self._wide = False
+        self.wide_container.hide()
+        self._wide = False
         # Where a view dragged out of the hidden tabs can be dropped back.
         self.view_tabs.set_drop_area(self.wide_container)
         column.addWidget(self.view_tabs, 1)
         column.addWidget(self.wide_container, 1)
         self.detail = QtWidgets.QDialog(self)
-        self.detail.setWindowTitle('Channel detail'); fit_to_screen(self.detail, 900, 420)
+        self.detail.setWindowTitle('Channel detail')
+        fit_to_screen(self.detail, 900, 420)
         detail_layout = QtWidgets.QVBoxLayout(self.detail)
         detail_layout.addWidget(self.panel.psd_channel)
-        row = QtWidgets.QHBoxLayout(); detail_layout.addLayout(row, 1)
-        row.addWidget(self.spectrum_view, 2); row.addWidget(self.band_view, 1)
+        row = QtWidgets.QHBoxLayout()
+        detail_layout.addLayout(row, 1)
+        row.addWidget(self.spectrum_view, 2)
+        row.addWidget(self.band_view, 1)
         self.spectrum_view.setMinimumHeight(130)
         self.band_view.setMinimumHeight(130)
         column.addWidget(self.transport, 0)
         self.feature_area = QtWidgets.QWidget()
         self.feature_layout = QtWidgets.QVBoxLayout(self.feature_area)
-        self.feature_layout.setContentsMargins(0,0,0,0)
+        self.feature_layout.setContentsMargins(0, 0, 0, 0)
         self.feature_area.setVisible(False)
         self.chart_splitter.addWidget(charts)
         self.chart_splitter.addWidget(self.feature_area)
         body.add_main(self.chart_splitter)
         self.settings_scroll = QtWidgets.QScrollArea()
-        self.settings_scroll.setWidgetResizable(True); self.settings_scroll.setWidget(self.panel)
+        self.settings_scroll.setWidgetResizable(True)
+        self.settings_scroll.setWidget(self.panel)
         self.settings_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         # The panel is 300 px wide plus the scroll bar, and stays so: narrower
         # cut it off, wider only left an empty strip beside it.
@@ -331,15 +349,21 @@ class MonitorPage(QtWidgets.QWidget):
         self.quality_settings = QtWidgets.QGroupBox('Quality warning thresholds')
         form = QtWidgets.QFormLayout(self.quality_settings)
         self.quality_controls = []
-        for label, value, maximum, suffix in [('Flat (EEG µV <)', .1, 100, ' µV'), ('Check signal (EEG µV >)', 100, 100000, ' µV'),
-                                               ('Line noise (mains >)', 20, 100, ' %'), ('Saturated (rail >)', 15, 100, ' %')]:
-            spin = NoScrollSpinBox(); spin.setRange(0, maximum); spin.setDecimals(2)
-            spin.setValue(value); spin.setSuffix(suffix); form.addRow(label, spin)
+        for label, value, maximum, suffix in [
+                ('Flat (EEG µV <)', .1, 100, ' µV'), ('Check signal (EEG µV >)', 100, 100000, ' µV'),
+                ('Line noise (mains >)', 20, 100, ' %'), ('Saturated (rail >)', 15, 100, ' %')]:
+            spin = NoScrollSpinBox()
+            spin.setRange(0, maximum)
+            spin.setDecimals(2)
+            spin.setValue(value)
+            spin.setSuffix(suffix)
+            form.addRow(label, spin)
             self.quality_controls.append(spin)
         note = QtWidgets.QLabel('Display warnings only, from the last 4 s of raw data. EEG µV = RMS of the '
                                 '1–45 Hz band. Rail: 187,500 µV at Cyton gain 24×, 750,000 µV on the Unicorn; '
                                 'unknown files: unavailable.')
-        note.setWordWrap(True); form.addRow(note)
+        note.setWordWrap(True)
+        form.addRow(note)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -365,7 +389,8 @@ class MonitorPage(QtWidgets.QWidget):
         form.addRow('Arrangement', self.layout_choice)
         hint = QtWidgets.QLabel('Dragging a view onto the left or right edge of the other one also '
                                 'sets "Side by side".')
-        hint.setWordWrap(True); hint.setStyleSheet(muted())
+        hint.setWordWrap(True)
+        hint.setStyleSheet(muted())
         form.addRow(hint)
         self.display_rate = NoScrollComboBox()
         self.display_rate.addItem('30 fps (drops to 20 if the computer is slow)', 30)
@@ -413,7 +438,8 @@ class MonitorPage(QtWidgets.QWidget):
                                 'They are not general EEG limits and are not used for the Unicorn or for '
                                 'files (a BrainVision recording keeps its own impedances in the .vhdr; '
                                 'Brain Products systems aim for tens of kΩ).')
-        note.setWordWrap(True); note.setStyleSheet(muted())
+        note.setWordWrap(True)
+        note.setStyleSheet(muted())
         box.addWidget(note)
         column.addWidget(impedance)
         diagnostics = QtWidgets.QGroupBox('Diagnostics (Cyton+Daisy, while streaming)')
@@ -427,19 +453,25 @@ class MonitorPage(QtWidgets.QWidget):
         group = QtWidgets.QGroupBox('Spectra (Monitor)')
         form = QtWidgets.QFormLayout(group)
         self.spectrum_seconds = NoScrollSpinBox()
-        self.spectrum_seconds.setRange(0, 120); self.spectrum_seconds.setDecimals(1)
-        self.spectrum_seconds.setSingleStep(1); self.spectrum_seconds.setSuffix(' s')
+        self.spectrum_seconds.setRange(0, 120)
+        self.spectrum_seconds.setDecimals(1)
+        self.spectrum_seconds.setSingleStep(1)
+        self.spectrum_seconds.setSuffix(' s')
         self.spectrum_seconds.setSpecialValueText('Same as display window')
         self.spectrum_seconds.setToolTip('Seconds of signal the FFT and PSD use. FFT resolution '
                                          'Δf = 1 / window; longer is finer but reacts more slowly.')
         self.welch_seconds = NoScrollSpinBox()
-        self.welch_seconds.setRange(0.25, 30); self.welch_seconds.setDecimals(2)
-        self.welch_seconds.setSingleStep(0.5); self.welch_seconds.setSuffix(' s')
+        self.welch_seconds.setRange(0.25, 30)
+        self.welch_seconds.setDecimals(2)
+        self.welch_seconds.setSingleStep(0.5)
+        self.welch_seconds.setSuffix(' s')
         self.welch_seconds.setToolTip('Length of each Welch segment: PSD resolution Δf = 1 / segment. '
                                       'Shorter segments: more of them to average, smoother but coarser.')
         self.welch_overlap = NoScrollSpinBox()
-        self.welch_overlap.setRange(0, 90); self.welch_overlap.setDecimals(0)
-        self.welch_overlap.setSingleStep(5); self.welch_overlap.setSuffix(' %')
+        self.welch_overlap.setRange(0, 90)
+        self.welch_overlap.setDecimals(0)
+        self.welch_overlap.setSingleStep(5)
+        self.welch_overlap.setSuffix(' %')
         self.welch_overlap.setToolTip('How much consecutive Welch segments overlap. 50 % is the usual '
                                       'choice with a Hann window (Welch, 1967).')
         self._load_spectral_settings()
@@ -454,7 +486,8 @@ class MonitorPage(QtWidgets.QWidget):
         form.addRow(self.spectral_summary)
         note = QtWidgets.QLabel('Applied at once, also while streaming: the spectrum restarts on the '
                                 'new frequency grid. The quality table keeps 4 s and 2 s segments.')
-        note.setWordWrap(True); note.setStyleSheet(muted())
+        note.setWordWrap(True)
+        note.setStyleSheet(muted())
         form.addRow(note)
         return group
 
@@ -581,7 +614,8 @@ class MonitorPage(QtWidgets.QWidget):
             if self.view_tabs.count():
                 self.view_tabs.setCurrentIndex(min(getattr(self, '_compact_tab', 0), self.view_tabs.count() - 1))
         self._wide = side_by_side
-        self.view_tabs.setVisible(not side_by_side); self.wide_container.setVisible(side_by_side)
+        self.view_tabs.setVisible(not side_by_side)
+        self.wide_container.setVisible(side_by_side)
         self._apply_spectrum_fold()
 
     def set_spectrum_collapsed(self, collapsed, remember=True):
@@ -609,7 +643,8 @@ class MonitorPage(QtWidgets.QWidget):
                 self._wide_sizes = self.wide_container.sizes()
             slot.setFixedWidth(STRIP)
         else:
-            slot.setMinimumWidth(0); slot.setMaximumWidth(16777215)
+            slot.setMinimumWidth(0)
+            slot.setMaximumWidth(16777215)
             if was_folded and self._wide_sizes and min(self._wide_sizes) > STRIP:
                 self.wide_container.setSizes(self._wide_sizes)
             elif was_folded:
@@ -695,7 +730,8 @@ class MonitorPage(QtWidgets.QWidget):
         self.preferences.setValue('spectrum_scale', self.multi_spectrum.scale.currentData())
         self.preferences.setValue('motion_shown', self.motion_view.toggle.isChecked())
         self.preferences.setValue('unicorn_channels', hw.encode(self.panel.unicorn_channels.settings()))
-        self.preferences.setValue('tab', getattr(self, '_compact_tab', 0) if self._wide else self.view_tabs.currentIndex())
+        self.preferences.setValue('tab', getattr(self, '_compact_tab', 0) if self._wide
+                                  else self.view_tabs.currentIndex())
         self.body.save()
         self.preferences.setValue('trace_window', self.panel.window_seconds.value())
         self.preferences.setValue('trace_amplitude', self.panel.amplitude.value())
@@ -707,7 +743,8 @@ class MonitorPage(QtWidgets.QWidget):
 
     def _quality_limits_changed(self):
         self.quality_tracker.reset()
-        self._last_quality = -float('inf'); self._quality_position = None
+        self._last_quality = -float('inf')
+        self._quality_position = None
 
     # ---------------- lifecycle ----------------
 
@@ -818,7 +855,8 @@ class MonitorPage(QtWidgets.QWidget):
     def _start_failed(self, exc):
         if self.source is not None:
             self.source.close()
-        self.source = None; self.player = None
+        self.source = None
+        self.player = None
         self.connection_label.setText('Connection failed · check device and port')
         QtWidgets.QMessageBox.critical(
             self, "Could not start",
@@ -884,8 +922,9 @@ class MonitorPage(QtWidgets.QWidget):
             shown = range(self.n_channels)
         self.panel.channel_button.set_selected(shown)
         self._configure_motion()
-        self.feature_buffer = np.empty((self.n_channels,0))
-        self.feature_capacity = int(self.fs * ((self.features_window.window_seconds.value() if self.features_window else 2) + 1))
+        self.feature_buffer = np.empty((self.n_channels, 0))
+        self.feature_capacity = int(self.fs * (
+            (self.features_window.window_seconds.value() if self.features_window else 2) + 1))
         self._last_tick = time.perf_counter()
         self.panel.show_start(True)
         self._frame_ms = self._target_frame_ms()
@@ -1240,7 +1279,7 @@ class MonitorPage(QtWidgets.QWidget):
             self.feature_layout.addWidget(self.features_window)
         self.feature_area.setVisible(not self.feature_area.isVisible())
         if self.feature_area.isVisible():
-            self.chart_splitter.setSizes([430,270])
+            self.chart_splitter.setSizes([430, 270])
 
     def remap(self):
         """Re-answer a .mat's layout question, then pick the new answer up."""
@@ -1282,7 +1321,7 @@ class MonitorPage(QtWidgets.QWidget):
         self._last_tick = time.perf_counter()
         self._new_samples = False
         self.sample_position = self.player.position
-        self.feature_buffer = np.empty((self.n_channels,0))
+        self.feature_buffer = np.empty((self.n_channels, 0))
         if self.features_window is not None:
             self.features_window.reset()
         self.filled = 0
@@ -1407,7 +1446,7 @@ class MonitorPage(QtWidgets.QWidget):
         self.scaler.reset()
         self._trace_signature = None
         self._spectrum_signature = None
-        self.feature_buffer = np.empty((self.n_channels,0))
+        self.feature_buffer = np.empty((self.n_channels, 0))
         self._reset_band_power()
         self.spectral_buffer = np.empty((self.n_channels, 0))
         if self.multi_spectrum.input.currentText() == 'Filtered':
@@ -1448,7 +1487,7 @@ class MonitorPage(QtWidgets.QWidget):
             return
         chunk = self.stream.process(chunk)   # seeds itself from the first chunk
         self.spectral_buffer = np.concatenate((self.spectral_buffer, chunk), axis=1)[:, -spectral:].copy()
-        self.feature_buffer = np.concatenate((self.feature_buffer, chunk),axis=1)[:, -self.feature_capacity:]
+        self.feature_buffer = np.concatenate((self.feature_buffer, chunk), axis=1)[:, -self.feature_capacity:]
         self.sample_position += chunk.shape[1]
         self._new_samples = bool(chunk.shape[1])
 
@@ -1789,12 +1828,12 @@ class MonitorPage(QtWidgets.QWidget):
         channels = self._drawn_channels()
         hidden = len(self.panel.selected_channels) - len(channels)
         note = ' · {} switched off (hidden)'.format(hidden) if hidden else ''
-        signature = (self.sample_position,self.filled,tuple(channels),tuple(names),self.fs,
-                     self.panel.auto_amplitude.isChecked(),self.panel.amplitude.value(),note)
+        signature = (self.sample_position, self.filled, tuple(channels), tuple(names), self.fs,
+                     self.panel.auto_amplitude.isChecked(), self.panel.amplitude.value(), note)
         # The widget's own visibility, not the page's: a popped-out view keeps
         # updating while the main window shows another tab.
         if self.time_scroll.isVisible() and signature != self._trace_signature:
-            self.time_view.setMinimumHeight(max(160,80+20*len(channels)))
+            self.time_view.setMinimumHeight(max(160, 80+20*len(channels)))
             self.time_view.draw(filtered, channels,
                                 self._amplitude(filtered, channels), self.fs, names, note,
                                 position=self.sample_position, window=self.buffer.shape[1])
@@ -1857,7 +1896,8 @@ class MonitorPage(QtWidgets.QWidget):
         self.raw_spectral_buffer = np.empty((self.n_channels, 0))
         self.spectral_buffer = np.empty((self.n_channels, 0))
         self.quality_tracker.reset()
-        self._last_quality = -float('inf'); self._quality_position = None
+        self._last_quality = -float('inf')
+        self._quality_position = None
         self._last_arrival = None
         self._waiting_since = time.perf_counter()
         self.quality_table.set_channels(self.panel.channel_names)
@@ -1868,7 +1908,8 @@ class MonitorPage(QtWidgets.QWidget):
     def _invalidate_spectra(self):
         self.spectral_jobs.invalidate()
         self._spectral_revision += 1
-        self._job_position = None; self._last_job = -float('inf')
+        self._job_position = None
+        self._last_job = -float('inf')
         self._latest_snapshot = None
         self.multi_spectrum.reset()
         self.band_view.reset()
@@ -1926,7 +1967,8 @@ class MonitorPage(QtWidgets.QWidget):
                 values = [replace(v, status='Switched off', rms=nan, saturation=nan, mains=nan, same_as=-1)
                           if v.channel in off else v for v in values]
             self.quality_table.update_values(values)
-            self._last_quality = now; self._quality_position = self.sample_position
+            self._last_quality = now
+            self._quality_position = self.sample_position
         # At most one running task, no growing queue. The next timer tick uses
         # the newest available window; obsolete revisions never reach widgets.
         if self.spectral_jobs.active or now - self._last_job < .5:
@@ -1942,7 +1984,8 @@ class MonitorPage(QtWidgets.QWidget):
             return
         block, fs, position = data.copy(), self.fs, self.sample_position
         welch_seconds, overlap = self._welch()
-        self._job_position = position; self._last_job = now
+        self._job_position = position
+        self._last_job = now
         self.spectral_jobs.start(lambda: (spectra_snapshot(block, fs, welch_seconds, overlap), position, now))
 
     def _spectra_ready(self, result, error):
@@ -1973,7 +2016,8 @@ class MonitorPage(QtWidgets.QWidget):
             self.band_view.reset()
             return
         if self._band_signature != index:
-            self.band_view.reset(); self._band_signature = index
+            self.band_view.reset()
+            self._band_signature = index
         panel = self.multi_spectrum
         kind = panel.mode.currentText()
         freqs = panel._freqs

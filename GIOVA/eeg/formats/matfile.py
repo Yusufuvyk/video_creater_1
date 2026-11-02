@@ -134,8 +134,8 @@ class Unread:
 
     def advice(self):
         return {"string": "cellstr(x)", "table": "table2struct(x, 'ToScalar', true)",
-                "categorical": "cellstr(x)", "datetime": "datenum(x)"}.get(self.kind, "convert it to numbers, "
-                                                                                   "char or a struct")
+                "categorical": "cellstr(x)", "datetime": "datenum(x)"}.get(
+            self.kind, "convert it to numbers, char or a struct")
 
 
 def _unread(value):
@@ -713,7 +713,7 @@ def field_events(variables, mapping, fs, number=None, n_samples=None):
     if n_samples is not None and seconds.size and (seconds.min() < 0 or seconds.max() > n_samples / fs):
         raise MatError("The event times in '{}' run past the signal ({:.1f} s against {:.1f} s): are they in {} "
                        "rather than {}?".format(run_key(mapping.onsets_key, number), float(seconds.max()),
-                                               n_samples / fs, "seconds" if unit != SECONDS else "samples", unit))
+                                                n_samples / fs, "seconds" if unit != SECONDS else "samples", unit))
     if mapping.codes_key:
         codes = _values(variables, run_key(mapping.codes_key, number))
         if codes.size != onsets.size:
@@ -1275,8 +1275,8 @@ def _checklist(variables, mapping):
             named = ", ".join("{} x{}".format(k, v) for k, v in list(counts.items())[:6])
             plain = all(k.replace(".", "", 1).isdigit() for k in counts)
             lines.append((READY, "Events: {} ({}){}.".format(len(labels), named,
-                                                            "; {} run(s) without events left out".format(skipped)
-                                                            if skipped else "")))
+                                                             "; {} run(s) without events left out".format(skipped)
+                                                             if skipped else "")))
             if plain and not mapping.labels_key:
                 lines.append((OPTIONAL, "Event names: the events are numbers. If a variable lists their names "
                                         "(classes ...), choose it under Code names: code 1 is its first name."))

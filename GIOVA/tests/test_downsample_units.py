@@ -260,7 +260,6 @@ class SettingsTests(unittest.TestCase):
             pass
 
 
-
 class LargeWaveTests(unittest.TestCase):
     """A blink larger than the row scale is drawn in full, not cut flat."""
 

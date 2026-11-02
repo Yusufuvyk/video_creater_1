@@ -124,7 +124,7 @@ class AcrossSchemaTests(unittest.TestCase):
         with patch.object(batch.Runner, "run", side_effect=[
                 {"features": {"features": first}, "lda": {"model": model}},
                 {"features": {"features": second}, "lda": {"model": model}}]), \
-             patch.object(batch, "_cv_feeds", return_value=("features", "features", "lda", "model")):
+                patch.object(batch, "_cv_feeds", return_value=("features", "features", "lda", "model")):
             return batch.across([csp_lda()], ["a.csv", "b.csv"])
 
     def test_features_in_another_order_are_put_in_the_first_ones_order(self):

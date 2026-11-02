@@ -85,7 +85,8 @@ class RecordingRegressions(unittest.TestCase):
     def test_short_packet_loss_does_not_require_a_long_clock_pause(self):
         t = 1700000000 + np.arange(500) / 125
         counter = (np.arange(500) * 2) % 256
-        keep = np.ones(500, bool); keep[200:203] = False
+        keep = np.ones(500, bool)
+        keep[200:203] = False
         indices = sample_positions(t[keep], 125, counter[keep], 2)
         self.assertEqual(indices[-1], 499)
         self.assertEqual(indices[200], 203)
@@ -111,7 +112,8 @@ class RecordingRegressions(unittest.TestCase):
         # 90 lost Daisy samples: the counter steps 2 * 91 = 182, which alone
         # reads as a step back. The clock around it shows ~0.7 s missing.
         n = 125 * 300
-        keep = np.ones(n, bool); keep[7500:7590] = False
+        keep = np.ones(n, bool)
+        keep[7500:7590] = False
         t, c = self.packet_stamps(n)[keep], ((np.arange(n) * 2) % 256)[keep].astype(float)
         self.assertAlmostEqual(sample_positions(t, 125, c, 2)[-1] + 1 - keep.sum(), 90, delta=3)
 
@@ -134,12 +136,14 @@ class RecordingRegressions(unittest.TestCase):
     def test_blank_row_is_not_counted_twice_by_packet_clock(self):
         t = 1700000000 + np.arange(500) / 125
         counter = ((np.arange(500) * 2) % 256).astype(float)
-        counter[200] = np.nan; t[200] = np.nan
+        counter[200] = np.nan
+        t[200] = np.nan
         np.testing.assert_array_equal(sample_positions(t, 125, counter, 2), np.arange(500))
 
     def test_nearby_pauses_and_short_uniform_clock_loss_are_exact(self):
         t = 1700000000 + np.arange(1250) / 125
-        t[200:] += 2; t[240:] += 3
+        t[200:] += 2
+        t[240:] += 3
         indices = sample_positions(t, 125)
         self.assertEqual(indices[-1], 1249 + 625)
         self.assertEqual(indices[200], 450)
@@ -238,7 +242,8 @@ class NumericRegressions(unittest.TestCase):
         signal = 502200 * 6e-9 * 1e6 * np.sin(2 * np.pi * 31.25 * t)
         self.assertAlmostEqual(estimate(0, signal, 125).ohms, 500000, delta=1000)
         for index, value in ((250, np.nan), (0, np.inf), (-1, -np.inf)):
-            bad = signal.copy(); bad[index] = value
+            bad = signal.copy()
+            bad[index] = value
             result = estimate(0, bad, 125)
             self.assertEqual(result.status, "Missing samples")
             self.assertTrue(np.isnan(result.ohms))
@@ -246,7 +251,9 @@ class NumericRegressions(unittest.TestCase):
         self.assertEqual(estimate(0, signal, 50).status, "No test signal")
 
     def test_trace_tail_and_true_extrema_times_are_preserved(self):
-        data = np.zeros((2, 2500)); data[0, -1] = 999; data[1, -2] = -888
+        data = np.zeros((2, 2500))
+        data[0, -1] = 999
+        data[1, -2] = -888
         out, indices = decimate_minmax(data, 600, return_indices=True)
         self.assertEqual(out[0].max(), 999)
         self.assertEqual(out[1].min(), -888)
@@ -276,7 +283,8 @@ class UIRegressions(unittest.TestCase):
     def test_monitor_invalid_filter_pauses_results_and_recovers(self):
         from eeg.ui.monitor import MonitorPage
         from eeg.ui.playback import Player
-        page = MonitorPage(); page.show()
+        page = MonitorPage()
+        page.show()
         try:
             data = np.tile(np.sin(2 * np.pi * 10 * np.arange(2500) / 125), (16, 1))
             page.source = FileSource(Recording(data, 125, page.panel.channel_names))
@@ -297,8 +305,10 @@ class UIRegressions(unittest.TestCase):
             self.assertGreater(page.filled, 0)
             self.assertTrue(np.isfinite(page.buffer[:, -page.filled:]).all())
         finally:
-            page.stop(); QtCore.QThreadPool.globalInstance().waitForDone(5000)
-            self.app.processEvents(); page.close()
+            page.stop()
+            QtCore.QThreadPool.globalInstance().waitForDone(5000)
+            self.app.processEvents()
+            page.close()
 
     def test_game_failed_start_cleans_up_and_allows_retry(self):
         from test_games import fake_game
@@ -321,13 +331,17 @@ class UIRegressions(unittest.TestCase):
                         game.start_game()
                         deadline = time.monotonic() + 3
                         while game.process is not None and time.monotonic() < deadline:
-                            self.app.processEvents(); time.sleep(.005)
+                            self.app.processEvents()
+                            time.sleep(.005)
                         self.assertIsNone(game.process)
                         self.assertIsNone(game.bridge)
                         self.assertTrue(game.start_button.isEnabled())
                         self.assertFalse(game.stop_button.isEnabled())
             finally:
-                game.shutdown(); game.close(); monitor.stop(); monitor.close()
+                game.shutdown()
+                game.close()
+                monitor.stop()
+                monitor.close()
 
 
 if __name__ == "__main__":

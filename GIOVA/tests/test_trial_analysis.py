@@ -28,6 +28,7 @@ def scratch():
         import shutil
         shutil.rmtree(directory, ignore_errors=True)
 
+
 import numpy as np
 from scipy.signal import welch
 
@@ -36,7 +37,7 @@ from eeg.core.trials import (Settings, Trial, analyze, measure, periodic_trials,
                              prepare_channel, trial_status)
 from eeg.formats.recordings import load_recording
 from eeg.formats.trial_analysis import (export_csv, load_session, power_comparison,
-                                       save_session)
+                                        save_session)
 
 
 class TrialMathTests(unittest.TestCase):

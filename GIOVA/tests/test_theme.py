@@ -18,8 +18,10 @@ class ThemeTests(unittest.TestCase):
         try:
             old = app.styleSheet()
             app.setStyleSheet(theme.app_stylesheet())
-            button = QtWidgets.QPushButton("x"); button.setProperty("primary", True)
-            button.show(); app.processEvents()
+            button = QtWidgets.QPushButton("x")
+            button.setProperty("primary", True)
+            button.show()
+            app.processEvents()
             button.close()
             app.setStyleSheet(old)
         finally:
@@ -37,7 +39,9 @@ class ThemeTests(unittest.TestCase):
                 self.assertEqual(theme.is_dark(), name == "dark")
                 widget = QtWidgets.QWidget()
                 widget.setStyleSheet(theme.app_stylesheet())
-                widget.show(); app.processEvents(); widget.close()
+                widget.show()
+                app.processEvents()
+                widget.close()
                 foreground = pg.getConfigOption("foreground")
                 with theme.paper():
                     self.assertFalse(theme.is_dark())

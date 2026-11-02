@@ -14,6 +14,7 @@ from .help_content import SECTIONS, TAB_TOPICS, TOPICS
 from .theme import color
 from .widgets import fit_to_screen
 
+
 def style():
     """The help page's look, in the window's theme and GIOVA's type: Inter, headings in the
     strong text colour (not the accent: it marks only what is selected), tables without a grid - a quiet header
@@ -47,7 +48,7 @@ def feedback_url():
     from .. import NAME, REPOSITORY, VERSION
     body = ("**What happened, or what would help:**\n\n\n**Steps to see it:**\n1. \n\n"
             "---\n{} {} · {} {} · Python {}".format(NAME, VERSION, platform.system(), platform.release(),
-                                                 platform.python_version()))
+                                                    platform.python_version()))
     return "{}/issues/new?{}".format(REPOSITORY, urlencode({"body": body}))
 
 
@@ -85,7 +86,8 @@ def block_picture(type_name, ratio=2.0):
 def with_picture(type_name, markup):
     """A block's page with its picture under the heading and its category line."""
     # the page's 140 % line height would add 40 % of the picture's height under it
-    tag = '<p style="line-height: 100%;"><img src="{}:{}" width="{}" height="{}"></p>'.format(PICTURE, type_name, *picture_size(type_name))
+    tag = '<p style="line-height: 100%;"><img src="{}:{}" width="{}" height="{}"></p>'.format(
+        PICTURE, type_name, *picture_size(type_name))
     end = markup.find("</p>")
     return markup[:end + 4] + tag + markup[end + 4:] if end >= 0 else tag + markup
 
@@ -190,8 +192,8 @@ class HelpDialog(QtWidgets.QDialog):
                         [c for g, c, _ in help_blocks.by_category() if g == group]))
                 parent = groups[group]
             self._add(parent, category, "category:" + category)
-            self._html["category:" + category] = "<h2>{}</h2>{}".format(html.escape(category),
-                                                                        help_blocks.overview([category]))
+            self._html["category:" + category] = "<h2>{}</h2>{}".format(
+                html.escape(category), help_blocks.overview([category]))
             for type_name in types:
                 self._add(self._items["category:" + category], block(type_name).title, "block:" + type_name)
                 self._html["block:" + type_name] = help_blocks.page(type_name)

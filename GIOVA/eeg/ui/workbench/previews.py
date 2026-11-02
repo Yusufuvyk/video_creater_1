@@ -272,7 +272,8 @@ class _Preview(QtWidgets.QWidget):
         grows = False
         for k in range(self.column.count()):
             widget = self.column.itemAt(k).widget()
-            if isinstance(widget, (pg.PlotWidget, pg.GraphicsLayoutWidget))                     and widget.maximumHeight() > widget.minimumHeight():
+            if (isinstance(widget, (pg.PlotWidget, pg.GraphicsLayoutWidget))
+                    and widget.maximumHeight() > widget.minimumHeight()):
                 self.column.setStretchFactor(widget, 1)
                 grows = True
             elif isinstance(widget, QtWidgets.QLabel):
@@ -857,8 +858,8 @@ class EpochsPreview(_Preview):
         for k, trial in enumerate(epochs.ids):
             inside = self.kept is None or trial in self.kept
             if not inside:
-                plot.addItem(pg.InfiniteLine(-k, angle=0, pen=pg.mkPen(color("dim"), width=2,
-                                                                         style=QtCore.Qt.PenStyle.DashLine)))
+                plot.addItem(pg.InfiniteLine(-k, angle=0, pen=pg.mkPen(
+                    color("dim"), width=2, style=QtCore.Qt.PenStyle.DashLine)))
             if k % every == 0 or not inside:
                 ticks.append((-k, "{}{}".format(trial, "" if inside else " ✕")))
         plot.getAxis("left").setTicks([ticks])
@@ -1567,8 +1568,8 @@ class TFPreview(_Preview):
                         QtWidgets.QApplication.processEvents()
                         # ids are numbers or text (from Select trials): padded when numbers, so files sort in order
                         trial_id = str(ids[k - 1]) if k else ""
-                        name = "average" if k == 0 else "trial" + (trial_id.zfill(3) if trial_id.isdigit()
-                                                                    else _safe_name(trial_id))
+                        name = "average" if k == 0 else "trial" + (
+                            trial_id.zfill(3) if trial_id.isdigit() else _safe_name(trial_id))
                         path = folder / "{}_{}.png".format(_safe_name(condition), name)
                         picture(copy).save(str(path), "PNG")
                         written.append(path)
@@ -1700,7 +1701,7 @@ class TFPreview(_Preview):
         if len(panels) == 2:
             pair = self._pair()
             panels.append(("{} − {} ({})".format(pair[1], pair[0], "percentage points" if kind == ep.ERD_MAP
-                                                  else "dB"), panels[1][1] - panels[0][1]))
+                                                 else "dB"), panels[1][1] - panels[0][1]))
         return panels
 
     def _draw_head(self):
@@ -2012,8 +2013,8 @@ class ContrastPreview(_Preview):
             heights = [r["change"] for r in rows]
             brushes = [pg.mkBrush(CHANNEL_COLORS[k % len(CHANNEL_COLORS)]) for _ in rows]
             self.plot.addItem(pg.BarGraphItem(x=x, height=heights, width=width * 0.9, brushes=brushes))
-            self.legend.addItem(pg.BarGraphItem(x=[0], height=[0], width=0, brush=CHANNEL_COLORS[k % len(CHANNEL_COLORS)]),
-                                band)
+            self.legend.addItem(
+                pg.BarGraphItem(x=[0], height=[0], width=0, brush=CHANNEL_COLORS[k % len(CHANNEL_COLORS)]), band)
             for xi, row in zip(x, rows):
                 if row["p_holm"] <= 0.05:
                     mark = pg.TextItem("*", color=color("text"), anchor=(0.5, 1.0 if row["change"] >= 0 else 0.0))

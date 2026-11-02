@@ -42,8 +42,8 @@ def band_power_lda(path="", condition=CHO2017_IMAGERY):
 
 def riemann(path="", condition=CHO2017_IMAGERY):
     graph = Graph("Riemann + logistic regression", "Left vs right hand imagery: 8-30 Hz, covariance per "
-                                                  "trial, tangent space, logistic regression with C tuned "
-                                                  "inside each fold, 5-fold cross-validation.")
+                  "trial, tangent space, logistic regression with C tuned "
+                  "inside each fold, 5-fold cross-validation.")
     *_, epochs = graph.chain(("load", {"path": path, "condition": condition}),
                              ("filter", {"low": 8.0, "high": 30.0, "notch": 0.0}),
                              ("epochs", {"tmin": 2.0, "tmax": 5.0}))
@@ -75,9 +75,9 @@ def trial_lab(path=""):
     steps and settings as `run_pipeline_trials.py` of a lab's Python conversion (not public) (subject 1, C3,
     right-hand imagery)."""
     graph = Graph("Cho2017 trials: C3, right hand", "Right-hand imagery on C3: whole 7 s trials, baseline 0-2 s, "
-                                                   "ideal 8-40 Hz band-pass per trial, the good trials picked by "
-                                                   "hand, then FFT, Welch PSD, STFT and complex Morlet wavelet of each "
-                                                   "trial, averaged; db4 wavelet denoising; DWT bands.")
+                  "ideal 8-40 Hz band-pass per trial, the good trials picked by "
+                  "hand, then FFT, Welch PSD, STFT and complex Morlet wavelet of each "
+                  "trial, averaged; db4 wavelet denoising; DWT bands.")
     *_, kept = graph.chain(("load", {"path": path, "condition": "imagery_right"}),
                            ("channels", {"channels": ["C3"]}),
                            ("epochs", {"tmin": 0.0, "tmax": 7.0}),

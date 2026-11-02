@@ -116,7 +116,8 @@ class DisplayRateTests(unittest.TestCase):
             page.fs, page.n_channels = 125.0, 4
             page.panel.set_channels(["a", "b", "c", "d"])
             page.player = Player(page.source, 125)
-            page._begin_streaming(); page.timer.stop()
+            page._begin_streaming()
+            page.timer.stop()
             page.transport.set_playing(True)
             steps = int(round(2000 / frame_ms))
             for _ in range(steps):

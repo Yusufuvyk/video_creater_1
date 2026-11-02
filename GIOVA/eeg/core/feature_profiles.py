@@ -40,7 +40,7 @@ class FeatureProfile:
             profile = cls(**(payload or {}))
             profile.validate()
             return profile
-        except (TypeError,AttributeError,IndexError,KeyError) as exc:
+        except (TypeError, AttributeError, IndexError, KeyError) as exc:
             raise ValueError("Malformed feature profile") from exc
 
     def validate(self):
@@ -67,7 +67,7 @@ class FeatureProfile:
         available = {spec.id for spec in self.catalog()}
         if not self.selected or any(key not in available for key in self.selected):
             raise ValueError("Choose at least one available feature")
-        if len(self.selected)!=len(set(self.selected)):
+        if len(self.selected) != len(set(self.selected)):
             raise ValueError("Visible features must be unique")
 
     def catalog(self):
@@ -77,18 +77,24 @@ class FeatureProfile:
             specs.extend([
                 FeatureSpec("band:" + name, name + " power", "uV^2", "Welch PSD integrated over " + span),
                 FeatureSpec("relative:" + name, "Relative " + name, "%", "Band power / total-range PSD integral × 100"),
-                FeatureSpec("peak:" + name, name + " maximum frequency", "Hz", "Frequency of the largest PSD bin in " + span + "; not proof of an oscillation"),
+                FeatureSpec("peak:" + name, name + " maximum frequency", "Hz",
+                            "Frequency of the largest PSD bin in " + span + "; not proof of an oscillation"),
             ])
-        specs += [FeatureSpec("ratio:" + name, name + " ratio", "ratio", numerator + " power / " + denominator + " power")
+        specs += [FeatureSpec("ratio:" + name, name + " ratio", "ratio",
+                              numerator + " power / " + denominator + " power")
                   for name, numerator, denominator in self.ratios]
-        specs += [FeatureSpec("total", "Total range power", "uV^2", "Direct PSD integral over the total frequency range"),
+        specs += [FeatureSpec("total", "Total range power", "uV^2",
+                              "Direct PSD integral over the total frequency range"),
                   FeatureSpec("rms", "RMS", "uV", "Root mean square after removing DC"),
                   FeatureSpec("ptp", "Peak-to-peak", "uV", "Maximum minus minimum"),
-                  FeatureSpec("variance", "Variance / Hjorth activity", "uV^2", "Variance after removing DC; identical to squared RMS"),
+                  FeatureSpec("variance", "Variance / Hjorth activity", "uV^2",
+                              "Variance after removing DC; identical to squared RMS"),
                   FeatureSpec("mobility", "Hjorth mobility", "s^-1", "sqrt(var(dx/dt) / var(x))"),
-                  FeatureSpec("complexity", "Hjorth complexity", "ratio", "Mobility of the derivative / mobility of the signal"),
+                  FeatureSpec("complexity", "Hjorth complexity", "ratio",
+                              "Mobility of the derivative / mobility of the signal"),
                   FeatureSpec("crossings", "Zero crossings", "s^-1", "Sign changes per second after removing DC"),
-                  FeatureSpec("entropy", "Spectral entropy", "0–1", "Shannon entropy / log2(number of bins) over the total range")]
+                  FeatureSpec("entropy", "Spectral entropy", "0–1",
+                              "Shannon entropy / log2(number of bins) over the total range")]
         return specs
 
     def visible_specs(self):
@@ -228,7 +234,8 @@ def summary(values):
     if not len(values):
         return dict(n=0, mean=np.nan, sd=np.nan, median=np.nan, q1=np.nan, q3=np.nan)
     return dict(n=len(values), mean=float(values.mean()), sd=float(values.std(ddof=1)) if len(values) > 1 else np.nan,
-                median=float(np.median(values)), q1=float(np.percentile(values, 25)), q3=float(np.percentile(values, 75)))
+                median=float(np.median(values)), q1=float(np.percentile(values, 25)),
+                q3=float(np.percentile(values, 75)))
 
 
 def cliffs_delta(a, b):

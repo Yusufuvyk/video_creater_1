@@ -229,8 +229,9 @@ STOP_TIP = "End the run at its next step: the blocks already computed keep their
 
 
 def show_run_button(button, sheet):
-    """Run, or Stop while `sheet` runs or waits its turn: one button in one place, so stopping needs no trip across the window. An icon alone, like the rest of the toolbar
-    (the user's choice, 31 October 2026): its name and F5 on hover and as its accessible name."""
+    """Run, or Stop while `sheet` runs or waits its turn: one button in one place, so stopping needs no trip
+    across the window. An icon alone, like the rest of the toolbar (the user's choice, 31 October 2026): its
+    name and F5 on hover and as its accessible name."""
     busy = sheet is not None and sheet.busy
     if button.property("face") != busy:
         word = "Stop" if busy else "Run"

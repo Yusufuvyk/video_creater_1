@@ -156,8 +156,8 @@ class NodeItem(QtWidgets.QGraphicsObject):
     def paint(self, painter, option, widget=None):
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         card = QtCore.QRectF(0, 0, WIDTH, self.height)
-        border = {"error": color("bad"), "stale": color("stale"), "running": color("accent")}.get(self.state,
-                                                                                              color("block_border"))
+        border = {"error": color("bad"), "stale": color("stale"), "running": color("accent")}.get(
+            self.state, color("block_border"))
         thick = self.isSelected() or self.state == "running"
         pen = QtGui.QPen(QtGui.QColor(color("accent") if self.isSelected() else border), 2.4 if thick else 1.2)
         painter.setPen(pen)
@@ -167,8 +167,8 @@ class NodeItem(QtWidgets.QGraphicsObject):
         outline.addRoundedRect(card, RADIUS, RADIUS)
         stripe = QtGui.QPainterPath()
         stripe.addRect(QtCore.QRectF(0, 0, WIDTH, STRIPE))
-        painter.fillPath(outline.intersected(stripe), QtGui.QColor(CATEGORY_COLOURS.get(self.kind.category,
-                                                                                      color("dim"))))
+        painter.fillPath(outline.intersected(stripe),
+                         QtGui.QColor(CATEGORY_COLOURS.get(self.kind.category, color("dim"))))
 
         title = QtGui.QFont(painter.font())
         title.setBold(True)
@@ -960,8 +960,9 @@ class BlockPreview(QtWidgets.QWidget):
                 painter.setBrush(QtGui.QColor(TYPE_COLOURS[port.types[0]]))
                 painter.drawEllipse(QtCore.QPointF(WIDTH if output else 0, y), PORT, PORT)
                 painter.setPen(QtGui.QColor(color("header_text")))
-                where = (QtCore.QRectF(WIDTH / 2 + 2, y - 9, half, 18) if output else QtCore.QRectF(12, y - 9, half, 18))
+                where = (QtCore.QRectF(WIDTH / 2 + 2, y - 9, half, 18) if output
+                         else QtCore.QRectF(12, y - 9, half, 18))
                 align = QtCore.Qt.AlignmentFlag.AlignVCenter | (QtCore.Qt.AlignmentFlag.AlignRight if output
-                                                               else QtCore.Qt.AlignmentFlag.AlignLeft)
+                                                                else QtCore.Qt.AlignmentFlag.AlignLeft)
                 painter.drawText(where, align, metrics.elidedText(port.label or port.name,
                                                                   QtCore.Qt.TextElideMode.ElideRight, int(half)))

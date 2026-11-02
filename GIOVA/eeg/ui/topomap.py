@@ -5,8 +5,9 @@ a small pyqtgraph version: the same azimuthal layout as the channel head map
 (`montages.positions_2d`), Clough-Tocher interpolation inside the electrodes'
 convex hull, nearest-electrode fill out to the head outline, and nothing drawn
 outside the head. Electrodes sit at the standard 10-05 positions of their names
-(MNE's template), never at positions measured on the person's head. Values are never invented beyond what the electrodes carry;
-the nearest-neighbour rim is only there so the map is not a jagged polygon.
+(MNE's template), never at positions measured on the person's head. Values are
+never invented beyond what the electrodes carry; the nearest-neighbour rim is only
+there so the map is not a jagged polygon.
 """
 import numpy as np
 import pyqtgraph as pg
@@ -193,4 +194,3 @@ class TopoGrid(pg.GraphicsLayoutWidget):
             t = np.linspace(-0.9, 0.9, 40)
             plot.addItem(pg.PlotCurveItem(side * (r + 0.055 * r * np.cos(t * 1.6)), 0.34 * r * np.sin(t),
                                           pen=OUTLINE_PEN))
-

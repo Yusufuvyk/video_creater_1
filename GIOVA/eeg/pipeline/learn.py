@@ -81,8 +81,8 @@ class CSP:
         self.rank = values.size
         if self.n_components > self.rank:
             raise ValueError("CSP components must be at most the channels' rank ({} of {} channels: an average "
-                             "reference or channels that are sums of others remove some)".format(self.rank,
-                                                                                                 x.shape[1]))
+                             "reference or channels that are sums of others remove some)".format(
+                                 self.rank, x.shape[1]))
         order = np.argsort(np.abs(values - 0.5))[::-1]
         self.eigenvalues = values[order]
         self.filters = vectors[:, order].T
@@ -184,8 +184,8 @@ class FBCSP:
             raise ValueError("FBCSP separates two conditions; these trials have {}".format(classes.size))
         if self.n_bands < 1 or x.shape[1] % self.n_bands:
             raise ValueError("FBCSP expects the channels of {} bands; these trials have {} channels. Put a "
-                             "Filter bank block with {} bands before it".format(self.n_bands, x.shape[1],
-                                                                                self.n_bands))
+                             "Filter bank block with {} bands before it".format(
+                                 self.n_bands, x.shape[1], self.n_bands))
         per = x.shape[1] // self.n_bands
         if not 1 <= 2 * self.n_pairs <= per:
             raise ValueError("FBCSP: 2 × pairs must be at most the channels per band ({})".format(per))
@@ -680,9 +680,10 @@ STEPS = {
     "mdm": _mdm,
 }
 CLASSIFIERS = ("lda", "svm", "logistic", "forest", "knn", "mdm", "nbpw")
-NAMES = {"augment": "Augment", "csp": "CSP", "trcsp": "TRCSP", "standardize": "Standardize", "select": "Select", "covariance": "Covariance",
-         "tangent": "Tangent space", "lda": "LDA", "svm": "SVM", "logistic": "Logistic regression",
-         "forest": "Random forest", "knn": "kNN", "mdm": "MDM", "fbcsp": "FBCSP", "mibif": "MIBIF", "nbpw": "NBPW"}
+NAMES = {"augment": "Augment", "csp": "CSP", "trcsp": "TRCSP", "standardize": "Standardize", "select": "Select",
+         "covariance": "Covariance", "tangent": "Tangent space", "lda": "LDA", "svm": "SVM",
+         "logistic": "Logistic regression", "forest": "Random forest", "knn": "kNN", "mdm": "MDM", "fbcsp": "FBCSP",
+         "mibif": "MIBIF", "nbpw": "NBPW"}
 
 
 class Model:
@@ -861,8 +862,8 @@ class Scores:
             text = "{}: {:.1%} is above the {:.1%} a random classifier stays within".format(
                 self.chance_level, self.accuracy, self.random_limit)
             if self.unequal:
-                text += ", and balanced accuracy {:.1%} above its {:.1%}".format(self.balanced_accuracy,
-                                                                                 self.balanced_limit)
+                text += ", and balanced accuracy {:.1%} above its {:.1%}".format(
+                    self.balanced_accuracy, self.balanced_limit)
         else:
             text = "within what chance can reach: a random classifier reaches up to {:.1%}".format(self.random_limit)
             if self._balanced_fails():
@@ -931,8 +932,8 @@ def cross_validate(x, labels, model, n_folds=5, seed=42, ids=None, folds=None, s
     if len(classes) < 2:
         raise ValueError("Cross-validation needs trials of at least two conditions")
     counts = {c: int(np.sum(labels == c)) for c in classes}
-    rounds = [(0, f) for f in folds] if folds is not None else split(labels, scheme, n_folds, seed, repeats,
-                                                                      train_fraction)
+    rounds = ([(0, f) for f in folds] if folds is not None
+              else split(labels, scheme, n_folds, seed, repeats, train_fraction))
     model.build(seed)  # fail before any fitting when the model is incomplete
     ids = list(ids) if ids is not None else [str(i + 1) for i in range(len(labels))]
 

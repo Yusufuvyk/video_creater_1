@@ -340,8 +340,8 @@ def laplacian_neighbours(names, count=LAPLACIAN_NEIGHBOURS):
     import mne
     names = list(names)
     if len(names) < count + 1:
-        raise ValueError("A Laplacian needs at least {} channels; this recording has {}".format(count + 1,
-                                                                                               len(names)))
+        raise ValueError("A Laplacian needs at least {} channels; this recording has {}".format(
+            count + 1, len(names)))
     montage = mne.channels.make_standard_montage("standard_1005")
     places = {n.casefold(): p for n, p in montage.get_positions()["ch_pos"].items()}
     unplaced = [n for n in names if n.casefold() not in places]
@@ -746,7 +746,8 @@ def dwt_bands(epochs, wavelet="db4", level=6, envelope=True, progress=None):
         for c, x in enumerate(trial):
             split = bands(x, epochs.fs, wavelet, level)
             if k == 0:
-                names += ["{} · {} {:g}–{:g} Hz".format(epochs.names[c], name, low, high) for name, low, high, _ in split]
+                names += ["{} · {} {:g}–{:g} Hz".format(epochs.names[c], name, low, high)
+                          for name, low, high, _ in split]
             row += [np.abs(hilbert(band[3])) if envelope else band[3] for band in split]
             total = sum(float(np.sum(band[3] ** 2)) for band in split) or 1.0
             energy += [100.0 * float(np.sum(band[3] ** 2)) / total for band in split]
@@ -754,7 +755,8 @@ def dwt_bands(epochs, wavelet="db4", level=6, envelope=True, progress=None):
         energies.append(energy)
     units = ["% of the channel's energy"] * len(names)
     return (epochs.with_data(np.asarray(signals), names=names),
-            Features(np.asarray(energies), [n + " energy" for n in names], list(epochs.labels), list(epochs.ids), units))
+            Features(np.asarray(energies), [n + " energy" for n in names], list(epochs.labels), list(epochs.ids),
+                     units))
 
 
 def filter_bank(epochs, bands=FBCSP_BANDS, start=0.5, end=2.5, design="chebyshev2", order=4, attenuation=40.0,

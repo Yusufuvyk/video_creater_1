@@ -52,12 +52,16 @@ class ProfileEditorTests(unittest.TestCase):
         self.assertEqual(dialog.list.currentItem().text(), "Lab cap")
         self.assertTrue(dialog.electrodes[0].isEnabled())
 
-        dialog.electrodes[0].setText("Fz"); dialog.on_boxes[0].setChecked(True); dialog._check()
+        dialog.electrodes[0].setText("Fz")
+        dialog.on_boxes[0].setChecked(True)
+        dialog._check()
         self.assertTrue(dialog.save_button.isEnabled())
-        dialog.electrodes[1].setText("O1"); dialog._check()             # O1 is already on pin 15
+        dialog.electrodes[1].setText("O1")
+        dialog._check()             # O1 is already on pin 15
         self.assertFalse(dialog.save_button.isEnabled())
         self.assertIn("same name", dialog.message.text())
-        dialog.electrodes[1].setText("CH2"); dialog._check()
+        dialog.electrodes[1].setText("CH2")
+        dialog._check()
 
         dialog._use()                                                   # save & use
         stored = {p.name: p for p in self.page._channel_profiles()}["Lab cap"]
@@ -68,9 +72,12 @@ class ProfileEditorTests(unittest.TestCase):
         self.assertEqual([i for i in self.page.panel.hardware.on_channels()], [0, 4, 5, 6, 14])
 
         dialog = self.open()                                            # rename
-        dialog.name.setText("Lab cap 2"); dialog._check(); dialog._save()
+        dialog.name.setText("Lab cap 2")
+        dialog._check()
+        dialog._save()
         names = [p.name for p in self.page._channel_profiles()]
-        self.assertIn("Lab cap 2", names); self.assertNotIn("Lab cap", names)
+        self.assertIn("Lab cap 2", names)
+        self.assertNotIn("Lab cap", names)
 
         with patch.object(QtWidgets.QMessageBox, 'question',
                           return_value=QtWidgets.QMessageBox.StandardButton.Yes):
@@ -82,7 +89,8 @@ class ProfileEditorTests(unittest.TestCase):
         dialog = self.open()
         with patch.object(QtWidgets.QInputDialog, 'getText', return_value=("Mine", True)):
             dialog._new()
-        dialog.name.setText(cp.builtin_profiles()[0].name); dialog._check()
+        dialog.name.setText(cp.builtin_profiles()[0].name)
+        dialog._check()
         self.assertFalse(dialog.save_button.isEnabled())
 
 

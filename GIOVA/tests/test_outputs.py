@@ -123,7 +123,6 @@ class TrialPreviewTests(unittest.TestCase):
         self.assertLess(low, 20000)
         self.assertGreater(high, 20000)                         # the mean is on screen, not off it
 
-
     def test_all_trials_as_an_image_and_pages_of_any_size(self):
         from eeg.ui.workbench.previews import EACH, IMAGE, preview
         fs, n = 100.0, 100

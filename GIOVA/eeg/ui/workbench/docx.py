@@ -95,7 +95,8 @@ def _paragraph(text, style=None, color=None):
 def _code(text):
     lines = str(text).split("\n")
     runs = '<w:r><w:br/></w:r>'.join(_run(line) for line in lines)
-    return '<w:p><w:pPr><w:pStyle w:val="Code"/><w:shd w:val="clear" w:color="auto" w:fill="F6F7F9"/></w:pPr>{}</w:p>'.format(runs)
+    return ('<w:p><w:pPr><w:pStyle w:val="Code"/><w:shd w:val="clear" w:color="auto" w:fill="F6F7F9"/></w:pPr>'
+            '{}</w:p>'.format(runs))
 
 
 def _table(header, rows):
@@ -113,7 +114,8 @@ def _table(header, rows):
 def _picture(number, width_px, height_px):
     cx = int(min(TEXT_WIDTH_EMU, width_px * EMU_PER_PIXEL))
     cy = int(cx * height_px / max(width_px, 1))
-    return ('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'
+    return ('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r><w:drawing>'
+            '<wp:inline distT="0" distB="0" distL="0" distR="0">'
             '<wp:extent cx="{cx}" cy="{cy}"/><wp:docPr id="{n}" name="Figure {n}"/>'
             '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>'
             '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
