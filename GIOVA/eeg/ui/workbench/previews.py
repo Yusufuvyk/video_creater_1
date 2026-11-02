@@ -1964,8 +1964,8 @@ class TFPreview(_Preview):
         what = ("Trial {} of {}".format(ids[trial], condition) if trial >= 0 else
                 "Each of {} {} trials transformed, then averaged".format(len(ids), condition))
         method = {ep.STFT: "STFT, {:g} s window ({:g} Hz apart)".format(settings.window, 1 / settings.window),
-                  ep.MORLET: "Morlet wavelets",
-                  ep.CWT: "complex Morlet CWT ({})".format(settings.wavelet)}[settings.method]
+                  ep.MORLET: "complex Morlet wavelets, {:g} cycles per Hz".format(settings.n_cycles),
+                  ep.CWT: "complex Morlet wavelet {}".format(settings.wavelet)}[settings.method]
         text = "{}; {}. Dashed: the active window, {:g}–{:g} s.".format(what, method, *settings.active)
         if kind == ep.ERD_MAP:
             text += " Red is a decrease from the baseline (ERD), blue an increase (ERS)."

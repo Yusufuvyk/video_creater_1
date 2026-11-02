@@ -235,7 +235,8 @@ class ChoTemplateTests(unittest.TestCase):
             self.assertEqual(out["wavelet_denoise1"]["epochs"].ids, kept.ids)
             script = to_python(graph)
             for line in ("select_trials(", "filter_trials(", "design='ideal'", "time_frequency(",
-                         "show_tf(out['erd1'])", "method='cwt'", "dwt_bands(", "wavelet_denoise(", "PyWavelets"):
+                         "show_tf(out['erd1'])", "method='wavelet'", "width='one wavelet'", "dwt_bands(",
+                         "wavelet_denoise(", "PyWavelets"):
                 self.assertIn(line, script)
 
     def test_show_draws_a_time_frequency_map(self):

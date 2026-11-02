@@ -1,0 +1,98 @@
+"""Time-frequency methods: STFT, and complex Morlet wavelets whose width is given as cycles per Hz or as one
+wavelet cmorB-C. Morlet and CWT were offered as two methods; they are one transform, and pipelines saved with
+those names open as the wavelet method and give the same numbers.
+
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
+"""
+import os
+from pathlib import Path
+import sys
+import unittest
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+ROOT = Path(__file__).resolve().parents[1]
+os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(ROOT / "tests" / ".tmp"))
+sys.path.insert(0, str(ROOT))
+
+import numpy as np  # noqa: E402
+
+from eeg.core import epochs as ep  # noqa: E402
+from eeg.core.sources import Recording  # noqa: E402
+from eeg.core.wavelets import cmor_cycles, cwt_amplitude  # noqa: E402
+from eeg.pipeline import Graph, block  # noqa: E402
+from eeg.pipeline import api as ee  # noqa: E402
+from eeg.pipeline import compute  # noqa: E402
+
+
+def recording(fs=128.0, trials=6, seconds=4.0):
+    """Trials of 10 Hz that drops after 1 s, with events, as a continuous recording."""
+    rng = np.random.default_rng(3)
+    n = int(trials * seconds * fs)
+    t = np.arange(n) / fs
+    within = t % seconds
+    data = np.vstack([np.where(within < 1.0, 10.0, 3.0) * np.sin(2 * np.pi * 10 * t) + rng.normal(0, 1, n)
+                      for _ in range(2)])
+    events = ep.EventTable(np.arange(trials) * seconds + 0.5, None, ["A"] * trials)
+    return Recording(data, fs, ["C3", "C4"], events=events)
+
+
+COMMON = dict(channels=["C3"], tmin=0.0, tmax=3.0, baseline=[0.0, 0.5], active=[1.5, 2.5], fmin=4.0, fmax=20.0)
+
+
+class NamesTests(unittest.TestCase):
+    def test_older_pipelines_open_as_the_wavelet_method(self):
+        old = {"version": 1, "name": "old", "wires": [],
+               "nodes": [{"id": "a", "type": "erd", "params": {"method": "morlet", "n_cycles": 0.4}},
+                         {"id": "b", "type": "erd", "params": {"method": "cwt", "wavelet": "cmor2.0-1.5"}}]}
+        graph = Graph.from_dict(old)
+        self.assertEqual((graph.params("a")["method"], graph.params("a")["width"], graph.params("a")["n_cycles"]),
+                         (ep.WAVELET, ep.PER_HZ, 0.4))
+        self.assertEqual((graph.params("b")["method"], graph.params("b")["width"], graph.params("b")["wavelet"]),
+                         (ep.WAVELET, ep.FIXED, "cmor2.0-1.5"))
+        saved = graph.to_dict()
+        self.assertEqual({n["params"]["method"] for n in saved["nodes"]}, {ep.WAVELET})   # saved as now named
+
+    def test_the_two_methods_are_offered_and_the_wavelet_is_free(self):
+        kind = block("erd")
+        params = {p.name: p for p in kind.params}
+        self.assertEqual(params["method"].choices, (ep.STFT, ep.WAVELET))
+        self.assertEqual(params["width"].choices, ep.WAVELET_WIDTHS)
+        self.assertIsNone(params["wavelet"].choices)                      # any cmorB-C can be typed
+        sentence = kind.describe({**kind.defaults(), "method": ep.WAVELET, "width": ep.FIXED,
+                                  "wavelet": "cmor1.5-1.0"})
+        self.assertIn("cmor1.5-1.0", sentence)
+        self.assertIn("5.44 cycles", sentence)
+
+
+class SameNumbersTests(unittest.TestCase):
+    def test_old_and_new_names_give_the_same_maps(self):
+        raw = recording()
+        for old, width in ((ep.MORLET, ep.PER_HZ), (ep.CWT, ep.FIXED)):
+            before = compute.time_frequency(raw, method=old, **COMMON)
+            now = compute.time_frequency(raw, method=ep.WAVELET, width=width, **COMMON)
+            self.assertEqual(now.settings.method, old)
+            np.testing.assert_array_equal(before.tf[0].freqs, now.tf[0].freqs)
+            np.testing.assert_array_equal(before.tf[0].power["A"], now.tf[0].power["A"])
+        # the block run on its own, with the older name, reads it the same way
+        self.assertEqual(ee.erd(raw, method="cwt", **COMMON).settings.method, ep.CWT)
+
+    def test_a_cmor_is_a_morlet_of_so_many_cycles(self):
+        """What Help says: cmorB-C is a Morlet wavelet of 2 pi C sqrt(B / 2) cycles, the same numbers."""
+        from mne.time_frequency import morlet, tfr_array_morlet
+        self.assertAlmostEqual(cmor_cycles("cmor1.5-1.0"), 5.441, places=3)
+        fs, rng = 250.0, np.random.default_rng(0)
+        t = np.arange(int(8 * fs)) / fs
+        x = 10 * np.sin(2 * np.pi * 10 * t) * (t > 3) + 5 * np.sin(2 * np.pi * 22 * t) + rng.normal(0, 3, t.size)
+        freqs = np.array([6.0, 10.0, 22.0, 30.0])
+        for wavelet in ("cmor1.5-1.0", "cmor2.0-1.5"):
+            cycles = cmor_cycles(wavelet)
+            cwt = cwt_amplitude(x, fs, freqs, wavelet) ** 2 / 2
+            power = tfr_array_morlet(x[None, None], fs, freqs, n_cycles=cycles, output="power", verbose="error")
+            gain = np.array([np.abs(w).sum() for w in morlet(fs, freqs, n_cycles=cycles)])
+            mne_power = power[0, 0] * (2.0 / gain ** 2)[:, None]
+            inner = slice(int(1.5 * fs), int(6.5 * fs))                     # away from the ends
+            np.testing.assert_allclose(cwt[:, inner], mne_power[:, inner], rtol=1e-3, atol=1e-3)
+
+
+if __name__ == "__main__":
+    unittest.main()

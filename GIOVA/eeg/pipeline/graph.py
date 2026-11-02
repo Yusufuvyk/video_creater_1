@@ -126,6 +126,11 @@ class Block:
         """Anything outside the parameters that changes the result (a file's date)."""
         return ""
 
+    def upgrade(self, params):
+        """`params` (some or all of the block's) as this version names them: a file, a script or an older
+        session may still use a value that was renamed. Returns a new dict; the default changes nothing."""
+        return dict(params)
+
 
 REGISTRY = {}
 
@@ -188,14 +193,15 @@ class Graph:
 
     def add(self, type_name, params=None, node_id=None, position=(0.0, 0.0), label=""):
         kind = block(type_name)
-        unknown = set(params or {}) - set(kind.defaults())
+        params = kind.upgrade(params or {})
+        unknown = set(params) - set(kind.defaults())
         if unknown:
             raise ValueError("{} has no parameter {}".format(kind.title, ", ".join(sorted(unknown))))
         if node_id is None:
             node_id = self._free_id(type_name)
         elif node_id in self.nodes:
             raise ValueError("There is already a node '{}'".format(node_id))
-        self.nodes[node_id] = Node(node_id, type_name, dict(params or {}), tuple(position), label)
+        self.nodes[node_id] = Node(node_id, type_name, params, tuple(position), label)
         return node_id
 
     def _free_id(self, type_name):
@@ -250,6 +256,7 @@ class Graph:
 
     def set(self, node_id, **params):
         kind = block(self.nodes[node_id].type)
+        params = kind.upgrade(params)
         unknown = set(params) - set(kind.defaults())
         if unknown:
             raise ValueError("{} has no parameter {}".format(kind.title, ", ".join(sorted(unknown))))

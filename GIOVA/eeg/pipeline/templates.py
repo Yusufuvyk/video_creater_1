@@ -76,7 +76,7 @@ def trial_lab(path=""):
     right-hand imagery)."""
     graph = Graph("Cho2017 trials: C3, right hand", "Right-hand imagery on C3: whole 7 s trials, baseline 0-2 s, "
                                                    "ideal 8-40 Hz band-pass per trial, the good trials picked by "
-                                                   "hand, then FFT, Welch PSD, STFT and complex Morlet CWT of each "
+                                                   "hand, then FFT, Welch PSD, STFT and complex Morlet wavelet of each "
                                                    "trial, averaged; db4 wavelet denoising; DWT bands.")
     *_, kept = graph.chain(("load", {"path": path, "condition": "imagery_right"}),
                            ("channels", {"channels": ["C3"]}),
@@ -88,7 +88,7 @@ def trial_lab(path=""):
             "smooth": 0.0}
     for type_name, params, port in (("fft", {}, "epochs"), ("psd", {"window": 2.0, "overlap": 0.75}, "epochs"),
                                     ("erd", dict(maps, window=1.0, overlap=0.5), "raw"),
-                                    ("erd", dict(maps, method="cwt"), "raw"),
+                                    ("erd", dict(maps, method="wavelet", width="one wavelet"), "raw"),
                                     ("dwt_bands", {"level": 6}, "epochs")):
         graph.connect(kept, "epochs", graph.add(type_name, params), port)
     # band-pass, then wavelet: what the wavelet removes on top of the filter (the lab's FIG 6)

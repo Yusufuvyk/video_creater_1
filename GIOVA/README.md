@@ -37,7 +37,7 @@ Around 40 blocks in plain groups:
 |---|---|
 | Preprocessing | units and gain, channel selection, bad channels and interpolation, re-reference, IIR / FIR / ideal filters, downsampling, ICA |
 | Trials | epochs from events or a table, time windows, per-trial filters, picking trials by hand, wavelet denoising, baseline |
-| Spectral | Welch PSD, FFT, filter banks, DWT bands, time-frequency (STFT, Morlet, CWT) and ERD / ERS |
+| Spectral | Welch PSD, FFT, filter banks, DWT bands, time-frequency (STFT, complex Morlet wavelets) and ERD / ERS |
 | Features | band power and ratios, signal features (RMS, Hjorth, entropy), window comparisons with statistics |
 | Machine learning | CSP, TRCSP, FBCSP, Riemannian covariance and tangent space, scaling and selection, LDA, SVM, logistic regression, random forest, kNN, MDM, NBPW, cross-validation with nested tuning |
 

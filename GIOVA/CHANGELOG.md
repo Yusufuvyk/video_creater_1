@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Time-frequency: STFT and Wavelet.** Morlet and CWT were one transform, complex Morlet wavelets, offered as two
+  methods. Now there is one Wavelet method; its width is given as cycles per Hz, or as any complex Morlet cmorB-C
+  for every frequency (cmor1.5-1.0 spans 5.44 cycles). Pipelines saved with morlet or cwt open as these and give
+  the same numbers.
+- **The Workbench shows only the settings that apply**: an STFT's window with STFT, a Chebyshev's ripple with that
+  design, a tuned classifier's search values when it is tuned. Hidden settings keep their values.
+- **Fixed: recordings made from source landed inside the `eeg` package** (eeg/Data), which the build packs into
+  the exe. They go to the project's Data folder, and the build stops while an eeg/Data folder exists.
+- **Fixed: line noise at 60 Hz.** The Monitor's quality table and the internal-short test measure at the mains
+  chosen in the filters (50 or 60 Hz).
+- **Fixed: Stop in the Monitor could wait for a Workbench analysis** for up to 20 s.
+- **Fixed: a scalp map's message ran off the left edge** of a narrow view; it wraps now.
+- Annotations marked bad in lower case (`bad_motion`) are bad spans, as MNE reads them.
+- The MATLAB test files (v7, v7.3, EEGLAB) are in the repository, so every reader test runs in a fresh checkout.
+
 - **Re-reference: Laplacian.** Each channel minus the mean of its four nearest electrodes (standard 10-05
   positions), for local rhythms such as mu over C3 and C4. In the report, the Python export and Help.
 - **Fixed: Morlet and CWT maps at the edges of a trial.** Each trial was transformed on its own, so the wavelets

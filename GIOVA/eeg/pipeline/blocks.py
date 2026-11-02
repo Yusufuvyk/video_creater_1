@@ -16,7 +16,7 @@ import hashlib
 from pathlib import Path
 
 from ..core import epochs as ep
-from ..core.wavelets import CWT_WAVELET, DISCRETE
+from ..core.wavelets import CWT_WAVELET, DISCRETE, cmor_cycles
 from .graph import (Block, CONTRAST, EPOCHS, FEATURES, ICA, MODEL, Param, Port, RAW, SCORES, SPECTRUM, TF,
                     applies_when, block, register)
 from . import compute
@@ -855,7 +855,10 @@ class CompareWindows(Block):
 
 
 #: How each time-frequency method is named on a block.
-METHOD_NAMES = {ep.STFT: "STFT", ep.MORLET: "Morlet", ep.CWT: "CWT"}
+#: The time-frequency methods as the Workbench names them; Morlet and CWT were one transform under two names.
+METHOD_NAMES = {ep.STFT: "STFT", ep.WAVELET: "Wavelet"}
+#: Settings only a wavelet reads, and those of each way of giving its width.
+WAVELET_ONLY = applies_when(method=ep.WAVELET)
 
 
 @register
@@ -874,14 +877,26 @@ class TimeFrequency(Block):
         Param("tmax", 4.0, "To (s)", "From a recording only: trials keep their own span."),
         Param("baseline", [-1.0, 0.0], "Baseline (s)", when=applies_when(baseline_mode=ep.WINDOW)),
         Param("active", [0.5, 2.5], "Active window (s)"),
-        Param("method", ep.STFT, "Method", "stft: one window for every frequency. morlet: MNE's Morlet wavelets. "
-              "cwt: complex Morlet scalogram (pywt's cmor1.5-1.0), {} frequencies from Lowest to Highest, as "
-              "the lab scripts draw it.".format(ep.CWT_FREQS), choices=(ep.STFT, ep.MORLET, ep.CWT)),
+        Param("method", ep.STFT, "Method", "stft: one window for every frequency, so every frequency is resolved "
+              "alike. wavelet: complex Morlet wavelets, each as long as its frequency needs: long and sharp in "
+              "frequency for slow rhythms, short and sharp in time for fast ones.", choices=(ep.STFT, ep.WAVELET)),
+        Param("width", ep.PER_HZ, "Wavelet width", "cycles per Hz: each wavelet spans this many cycles per Hz of "
+              "its frequency (2 to 12 cycles), about 40 frequencies from Lowest to Highest. one wavelet: one "
+              "complex Morlet you name for every frequency, {} frequencies evenly from Lowest to Highest, as the "
+              "lab scripts draw their scalogram.".format(ep.CWT_FREQS), choices=ep.WAVELET_WIDTHS,
+              when=WAVELET_ONLY),
+        Param("n_cycles", 0.5, "Cycles per Hz", "Cycles of each wavelet per Hz of its frequency, kept between 2 and "
+              "12: 0.5 gives 5 cycles at 10 Hz and 12 from 24 Hz up.",
+              when=applies_when(method=ep.WAVELET, width=ep.PER_HZ)),
+        Param("wavelet", CWT_WAVELET, "Wavelet", "Any complex Morlet as PyWavelets names it, cmorB-C: B its "
+              "bandwidth, C its centre frequency. Together they set the cycles it spans at every frequency, "
+              "2πC√(B/2): cmor1.5-1.0 spans 5.44 cycles; a larger B or C, more cycles (sharper in frequency, "
+              "blurrier in time).", when=applies_when(method=ep.WAVELET, width=ep.FIXED)),
         Param("fmin", 4.0, "Lowest (Hz)", advanced=True), Param("fmax", 40.0, "Highest (Hz)", advanced=True),
         Param("window", 0.5, "STFT window (s)", advanced=True, when=applies_when(method=ep.STFT)),
         Param("overlap", 0.9, "Overlap", advanced=True, when=applies_when(method=ep.STFT)),
         Param("smooth", 0.5, "Smoothing (s)", "Power smoothed over this long in time, per trial, before ERD. "
-              "0: none, so one trial's amplitude is its raw |STFT|.", advanced=True),
+              "0: none, so one trial's amplitude is its raw |STFT| or |wavelet|.", advanced=True),
         Param("bands", [["mu", 8.0, 13.0], ["beta", 13.0, 30.0]], "Bands", advanced=True),
         Param("topography", False, "Scalp map", "ERD of every electrode, for the head map. Slower.",
               advanced=True),
@@ -894,28 +909,44 @@ class TimeFrequency(Block):
         Param("erd_mode", ep.POOLED, "Average", "pooled: the trials' mean power against their mean baseline "
               "(robust). mean_of_trials: each trial's % change, then averaged. Used by every map, band course "
               "and trace.", choices=(ep.POOLED, ep.MEAN_OF_TRIALS), advanced=True),
-        Param("n_cycles", 0.5, "Morlet cycles per Hz", "Morlet only: cycles of each wavelet per Hz of its "
-              "frequency, kept between 2 and 12.", advanced=True, when=applies_when(method=ep.MORLET)),
-        Param("wavelet", CWT_WAVELET, "CWT wavelet", "CWT only: a complex Morlet, cmor<bandwidth>-<centre>.",
-              advanced=True, when=applies_when(method=ep.CWT)),
         Param("reject_uv", 0.0, "Reject above (µV)", "Leave out a trial whose signal strays further than this "
               "from its mean on an analysed channel. 0: off.", advanced=True),
     )
 
     version = 2
 
+    def upgrade(self, params):
+        """Files, scripts and sessions from before name the two ways of giving a wavelet's width as methods of
+        their own: method "morlet" is a wavelet of so many cycles per Hz, "cwt" one complex Morlet. The numbers
+        they give are the same."""
+        params = dict(params)
+        if params.get("method") in (ep.MORLET, ep.CWT):
+            params["width"] = ep.PER_HZ if params["method"] == ep.MORLET else ep.FIXED
+            params["method"] = ep.WAVELET
+        return params
+
     def run(self, inputs, params, context):
         return {"tf": compute.time_frequency(inputs["raw"], **params, progress=context.progress)}
 
     def short(self, params):
-        return "{} · {}".format(METHOD_NAMES[params["method"]],
+        return "{} · {}".format(METHOD_NAMES.get(params["method"], params["method"]),
                                 ", ".join(_names(params["channels"])) or "all channels")
 
+    @staticmethod
+    def method_text(params):
+        """The transform in words, with the numbers that set it."""
+        if params["method"] == ep.STFT:
+            return "STFT ({:g} s Hann window, {:.0%} overlap)".format(params["window"], params["overlap"])
+        if params["width"] == ep.PER_HZ:
+            return "Complex Morlet wavelets ({:g} cycles per Hz, 2 to 12 cycles)".format(params["n_cycles"])
+        try:
+            cycles = "{:.2f} cycles at every frequency, ".format(cmor_cycles(params["wavelet"]))
+        except ValueError:
+            cycles = ""
+        return "Complex Morlet wavelet {} ({}{} frequencies)".format(params["wavelet"], cycles, ep.CWT_FREQS)
+
     def describe(self, params, trials=False):
-        method = {ep.STFT: "STFT ({:g} s Hann window, {:.0%} overlap)".format(params["window"], params["overlap"]),
-                  ep.MORLET: "Morlet wavelet ({:g} cycles per Hz, 2 to 12 cycles)".format(params["n_cycles"]),
-                  ep.CWT: "Complex Morlet CWT ({}, {} frequencies)".format(
-                      params["wavelet"], ep.CWT_FREQS)}[params["method"]]
+        method = self.method_text(params)
         span = ("of each whole trial" if trials else
                 "of each trial from {:g} to {:g} s around each event".format(params["tmin"], params["tmax"]))
         smooth = "smoothed over {:g} s".format(params["smooth"]) if params["smooth"] else "not smoothed"

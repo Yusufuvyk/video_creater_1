@@ -27,6 +27,7 @@ __all__ = sorted(REGISTRY) + ["run", "show"]
 def run(type_name, *inputs, **params):
     """Run one block: `run("filter", raw, low=1.0)` is `filter(raw, low=1.0)`."""
     kind = block(type_name)
+    params = kind.upgrade(params)
     if len(inputs) > len(kind.inputs):
         raise TypeError("{} takes {} input(s): {}".format(
             type_name, len(kind.inputs), ", ".join(p.name for p in kind.inputs)))

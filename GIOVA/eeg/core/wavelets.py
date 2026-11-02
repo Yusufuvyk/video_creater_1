@@ -90,6 +90,16 @@ def cmor_parameters(wavelet):
     return bandwidth, centre
 
 
+def cmor_cycles(wavelet):
+    """How many cycles a complex Morlet cmorB-C spans, as a Morlet wavelet's n_cycles counts them: 2 pi C sqrt(B / 2).
+
+    Its Gaussian exp(-u^2 / B), with u = t f / C, has the standard deviation C sqrt(B / 2) / f seconds, and a
+    Morlet of n cycles has n / (2 pi f): cmor1.5-1.0 is a Morlet of 5.44 cycles at every frequency.
+    """
+    bandwidth, centre = cmor_parameters(wavelet)
+    return 2.0 * np.pi * centre * np.sqrt(bandwidth / 2.0)
+
+
 def cwt_amplitude(x, fs, freqs, wavelet=CWT_WAVELET):
     """|CWT| as amplitude, (n_freqs, n_samples): a sine of amplitude A at one of `freqs` reads A.
 

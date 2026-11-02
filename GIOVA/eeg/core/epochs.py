@@ -36,6 +36,21 @@ from .spectral import sample_index, welch_psd
 from .trials import Settings, design_kwargs, reference_signal, validate_settings
 
 STFT, MORLET, CWT = "stft", "morlet", "cwt"
+#: How the Workbench offers them. Morlet and CWT are one transform, complex Morlet wavelets, and differ only in how a
+#: wavelet's width is given: so there is one "wavelet" method, its width either some cycles per Hz of each
+#: frequency (MORLET) or one complex Morlet cmorB-C for every frequency (CWT).
+WAVELET = "wavelet"
+PER_HZ, FIXED = "cycles per Hz", "one wavelet"
+WAVELET_WIDTHS = (PER_HZ, FIXED)
+
+
+def tf_method(method, width=PER_HZ):
+    """The computation a method and a wavelet width name: STFT, MORLET or CWT (the older names pass as they are)."""
+    if method == WAVELET:
+        if width not in WAVELET_WIDTHS:
+            raise ValueError("A wavelet's width is given as {} or {}".format(*WAVELET_WIDTHS))
+        return MORLET if width == PER_HZ else CWT
+    return method
 #: Frequencies a CWT is computed at, evenly from the lowest to the highest (as the lab's scalogram).
 CWT_FREQS = 128
 POOLED, MEAN_OF_TRIALS = "pooled", "mean_of_trials"

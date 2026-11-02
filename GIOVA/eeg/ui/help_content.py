@@ -343,7 +343,7 @@ Describes overlap, not accuracy and not a significance test.</td></tr>
 </table>
 <h3>Advanced transforms</h3>
 <ul>
-<li>STFT frames are density (µV²/Hz); Morlet is wavelet power (µV², a sine of amplitude A reads
+<li>STFT frames are density (µV²/Hz); a wavelet map is power (µV², a sine of amplitude A reads
 A²/2) and is not integrated as a PSD.</li>
 <li>ERD needs a baseline: <code>100 × (P − R) / R</code>. With <b>Pooled power</b> (the default) the
 power is averaged over trials before the division; <b>Mean of trial %</b> divides each trial first.</li>
@@ -903,8 +903,12 @@ follow.</p>
 <h3>Time-frequency</h3>
 <p>ERD / ERS per electrode: the band's power (its frequencies averaged), the trials' power averaged, then
 100 × (power − baseline) / baseline. Amplitude: a sine of amplitude A reads A (half of what scipy's STFT
-gives). <b>cwt</b>: complex Morlet scalogram cmor1.5-1.0 as PyWavelets defines it, 128 frequencies, computed
-from its formula.</p>
+gives). <b>wavelet</b>: complex Morlet wavelets. Their width is given in one of two ways: <i>cycles per Hz</i>
+(each wavelet spans that many cycles per Hz of its frequency, 2 to 12 cycles, about 40 frequencies), or
+<i>one wavelet</i> cmorB-C as PyWavelets names it, the same for every frequency (128 frequencies, computed from
+its formula). The two are one transform: cmorB-C is a Morlet wavelet of 2πC√(B/2) cycles, so cmor1.5-1.0, the
+lab scalogram's, spans 5.44 cycles at every frequency. Pipelines saved with the methods <b>morlet</b> and
+<b>cwt</b> open as these two and give the same numbers.</p>
 <h3>Filters and wavelets</h3>
 <p>IIR filters are designed by SciPy, FIR as MNE-Python does by default. <b>ideal</b> sets every FFT bin outside
 the band to zero: sharp, but it rings in time. <b>Wavelet denoise</b>: 0 µV means the universal threshold of

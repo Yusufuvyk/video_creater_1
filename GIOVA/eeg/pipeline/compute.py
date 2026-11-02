@@ -18,8 +18,8 @@ import warnings
 import numpy as np
 
 from ..core.analysis_profiles import parse_sequence
-from ..core.epochs import (CONDITION, EpochSettings, EventTable, POOLED, STFT, WINDOW, compute_epochs,
-                           compute_trials, events_for, load_label_map)
+from ..core.epochs import (CONDITION, EpochSettings, EventTable, PER_HZ, POOLED, STFT, WINDOW, compute_epochs,
+                           compute_trials, events_for, load_label_map, tf_method)
 from ..core.config import BANDS
 from ..core.feature_profiles import FeatureProfile, extract, mean_values
 from ..core.sources import downsample
@@ -916,14 +916,16 @@ def signal_features(epochs, selected=("rms", "mobility", "complexity", "entropy"
 def time_frequency(source, channels=("C3", "Cz", "C4"), conditions=(), tmin=-1.0, tmax=4.0, baseline=(-1.0, 0.0),
                    active=(0.5, 2.5), method=STFT, fmin=4.0, fmax=40.0, window=0.5, overlap=0.9, smooth=0.5,
                    bands=MU_BETA, topography=False, baseline_mode=WINDOW, reference="", erd_mode=POOLED,
-                   n_cycles=0.5, wavelet=CWT_WAVELET, reject_uv=0.0, progress=None):
+                   n_cycles=0.5, wavelet=CWT_WAVELET, reject_uv=0.0, width=PER_HZ, progress=None):
     """Time-frequency power and ERD/ERS of a recording (cut into trials from `tmin` to `tmax` s around each
     event) or of trials as they come (`tmin` / `tmax` then unused).
 
-    erd_mode: "pooled" (mean power against mean baseline) or "mean_of_trials" (each trial's % averaged), for
-    every map, band course and trace; n_cycles: Morlet cycles per Hz (clipped to 2..12); wavelet: the CWT's
-    complex Morlet; reject_uv: a trial straying further than this from its mean on an analysed channel is
-    left out (0: off). All as `core.epochs.EpochSettings`."""
+    method: "stft" or "wavelet" (complex Morlet wavelets), its `width` either `n_cycles` cycles per Hz of each
+    frequency (clipped to 2..12) or one complex Morlet `wavelet` (cmorB-C) for every frequency; "morlet" and
+    "cwt", the older names of those two, are read as well. erd_mode: "pooled" (mean power against mean
+    baseline) or "mean_of_trials" (each trial's % averaged), for every map, band course and trace; reject_uv: a
+    trial straying further than this from its mean on an analysed channel is left out (0: off). All as
+    `core.epochs.EpochSettings`."""
     trials = isinstance(source, Epochs)
     available = list(source.names if trials else source.channel_names)
     names = names_of(channels)
@@ -940,7 +942,7 @@ def time_frequency(source, channels=("C3", "Cz", "C4"), conditions=(), tmin=-1.0
         reference = next((c for c in dict.fromkeys(labels) if not wanted or c in wanted), "")
     settings = EpochSettings(
         conditions=names_of(conditions), tmin=tmin, tmax=tmax, baseline=list(baseline), active=list(active),
-        method=method, fmin=fmin, fmax=fmax, window=window, overlap=overlap, smooth=smooth,
+        method=tf_method(method, width), fmin=fmin, fmax=fmax, window=window, overlap=overlap, smooth=smooth,
         bands=[list(b) for b in bands], topography=bool(topography), filters={}, baseline_mode=baseline_mode,
         reference=reference, erd_mode=erd_mode, n_cycles=float(n_cycles), wavelet=wavelet,
         reject_uv=float(reject_uv))

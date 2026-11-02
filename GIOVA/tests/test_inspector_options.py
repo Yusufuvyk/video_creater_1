@@ -41,7 +41,7 @@ class WhenTests(unittest.TestCase):
     def test_a_hidden_setting_keeps_its_value(self):
         graph = Graph()
         node = graph.add("erd", {"window": 0.25})
-        graph.set(node, method=ep.MORLET)
+        graph.set(node, method=ep.WAVELET)
         self.assertEqual(graph.params(node)["window"], 0.25)          # the pipeline still holds it
         graph.set(node, method=ep.STFT)
         self.assertEqual(graph.params(node)["window"], 0.25)
@@ -68,12 +68,12 @@ class InspectorTests(unittest.TestCase):
     def test_time_frequency_shows_the_settings_of_its_method_only(self):
         node = self.graph.add("erd")
         self.inspector.show_node(self.graph, node)
-        method_settings = {"window", "overlap", "n_cycles", "wavelet"}
+        method_settings = {"window", "overlap", "width", "n_cycles", "wavelet"}
         self.assertEqual(self.shown() & method_settings, {"window", "overlap"})
-        self.inspector.set_value(node, "method", ep.MORLET)
-        self.assertEqual(self.shown() & method_settings, {"n_cycles"})
-        self.inspector.set_value(node, "method", ep.CWT)
-        self.assertEqual(self.shown() & method_settings, {"wavelet"})
+        self.inspector.set_value(node, "method", ep.WAVELET)
+        self.assertEqual(self.shown() & method_settings, {"width", "n_cycles"})            # cycles per Hz
+        self.inspector.set_value(node, "width", ep.FIXED)
+        self.assertEqual(self.shown() & method_settings, {"width", "wavelet"})             # one cmorB-C
         self.assertIn("baseline", self.shown())
         self.assertNotIn("reference", self.shown())
         self.inspector.set_value(node, "baseline_mode", ep.CONDITION)
