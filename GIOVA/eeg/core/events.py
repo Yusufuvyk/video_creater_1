@@ -21,10 +21,11 @@ def load_events(path):
     """Read a marker file into [(unix_time, label)], sorted by time.
 
     Blank lines and `#` comments are skipped. Rows whose first field is not a
-    number are skipped too, which quietly tolerates a header line.
+    number are skipped too, which quietly tolerates a header line. A byte order
+    mark (a spreadsheet's "CSV UTF-8") is not part of the first time.
     """
     events = []
-    for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig", errors="replace").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue

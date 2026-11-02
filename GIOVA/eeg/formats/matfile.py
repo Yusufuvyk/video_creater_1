@@ -528,8 +528,8 @@ def parse_rows(text, n_rows):
 
     Returns None when the text is empty or covers everything, so callers can
     tell "all rows" from "a selection that happens to be all of them" and skip
-    the slice entirely. Out-of-range entries are dropped rather than raising:
-    the field is edited live in a dialog and passes through half-typed states.
+    the slice entirely. A row past the last is an error, not dropped: "1-100"
+    on a 16-row array would otherwise quietly mean all 16.
     """
     if not text:
         return None

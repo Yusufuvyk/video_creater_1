@@ -78,25 +78,34 @@ def field_kind(param):
     return "path" if param.name == "path" else "text"
 
 
+def number_text(value):
+    """30 as 30 and 7.5 as 7.5, but 3600.125 in full: 12 significant digits, so what a field shows reads back as
+    the number it holds. Six (the usual {:g}) wrote a trial at 3600.125 s as 3600.12, 5 ms off once edited."""
+    return "{:.12g}".format(float(value))
+
+
 def to_text(kind, value):
     if kind == "names":
         return ", ".join(str(v) for v in (value or []))
     if kind == "numbers":
-        return ", ".join("{:g}".format(v) for v in value)
+        return ", ".join(number_text(v) for v in value)
     if kind == "bands":
-        return ", ".join("{} {:g}-{:g}".format(name, low, high) for name, low, high in value)
+        return ", ".join("{} {}-{}".format(name, number_text(low), number_text(high)) for name, low, high in value)
     if kind == "ranges":
-        return ", ".join("{:g}-{:g}".format(low, high) for low, high in value)
+        return ", ".join("{}-{}".format(number_text(low), number_text(high)) for low, high in value)
     if kind == "ratios":
         return ", ".join("{}={}/{}".format(name, a, b) for name, a, b in value)
     if kind == "trials":
-        return "; ".join("{} | {} | {:g}-{:g}{}".format(row[0], row[1], float(row[2]), float(row[3]),
-                                                        "" if len(row) < 5 or row[4] else " | out")
+        return "; ".join("{} | {} | {}-{}{}".format(row[0], row[1], number_text(row[2]), number_text(row[3]),
+                                                    "" if len(row) < 5 or row[4] else " | out")
                          for row in value or [])
     return str(value)
 
 
-_TRIAL = re.compile(r"^\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*"
+#: a number as a field shows or a person types it: 30, -0.5, .5, 1e-05
+_UNSIGNED = r"(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+_NUMBER = "-?" + _UNSIGNED
+_TRIAL = re.compile(r"^\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*(" + _NUMBER + r")\s*[-–]\s*(" + _NUMBER + r")\s*"
                     r"(?:\|\s*(out|in)\s*)?$")
 
 
@@ -113,8 +122,8 @@ def trials_from_text(text):
     return rows
 
 
-_BAND = re.compile(r"^\s*(\S+)\s+(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$")
-_RANGE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*$")
+_BAND = re.compile(r"^\s*(\S+)\s+(" + _NUMBER + r")\s*[-–]\s*(" + _NUMBER + r")\s*$")
+_RANGE = re.compile(r"^\s*(" + _UNSIGNED + r")\s*[-–]\s*(" + _UNSIGNED + r")\s*$")
 
 
 def from_text(kind, text, length=None):
