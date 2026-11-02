@@ -341,6 +341,7 @@ class WorkbenchPage(QtWidgets.QWidget):
         self._pending = False
         self.inspector.edited.connect(self._param_edited)
         self.inspector.layout_requested.connect(self.choose_layout)
+        self.inspector.run_requested.connect(lambda node: self.run([node]))
         self.inspector.renamed.connect(lambda node: (self.canvas.refresh(node), self._changed()))
         for key, action in (("F5", lambda: run_or_stop(self, self.sheet)),
                             ("Ctrl+S", lambda: self.save_pipeline(self.path)),

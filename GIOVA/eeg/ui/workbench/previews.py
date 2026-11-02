@@ -15,7 +15,7 @@ from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
 from ...core import epochs as ep
 from ...core.spectral import POWER_DENSITY
-from ...pipeline import graph as g
+from ...pipeline import graph as g, learn
 from ...pipeline.data import Contrast, Epochs, Features, IcaResult, Spectrum
 from ..plots import CHANNEL_COLORS, MARKER_COLOUR, channel_pen, erd_colormap, tf_scale
 from ..theme import color, muted, paper, plot_background, warning
@@ -1284,6 +1284,9 @@ def roc_points(positive, scores):
 
 
 class ScoresPreview(_Preview):
+    #: label shuffles a permutation test can be asked for under a result; a click runs the first
+    SHUFFLES = (200, 100, 500, 1000, 5000)
+
     def __init__(self, scores, large=False):
         super().__init__(scores, large)
         above = scores.better_than_random
@@ -1299,15 +1302,24 @@ class ScoresPreview(_Preview):
                               "(alpha 0.01).".format(scores.tested, scores.random_limit, scores.random_limit_01))
         limit.setToolTip("The binomial limit of a random classifier for this many trials: Müller-Putz et al. "
                          "(2008); Combrisson & Jerbi (2015)")
+        #: the note that the limit alone is approximate; a permutation test is offered under it
+        self.approximate = None
         if scores.unequal:
             name, share = scores.largest
             self.add_note("The conditions have unequal trials: always guessing {} scores {:.1%}. Balanced accuracy "
                           "{:.1%} must also beat the {:.1%} a random classifier reaches.".format(
                               name, share, scores.balanced_accuracy, scores.balanced_limit),
-                          quiet=scores.balanced_accuracy > scores.balanced_limit)
+                          quiet=learn.above(scores.balanced_accuracy, scores.balanced_limit))
         if scores.permutations:
             self.add_note("Permutation test: p = {:.3g} ({} label shuffles); the verdict needs p ≤ 0.05.".format(
                 scores.permutation_p, scores.permutations), quiet=scores.permutation_p <= 0.05)
+        else:
+            self.approximate = self.add_note("The limit takes the tested trials as independent, which "
+                                             "cross-validated ones are not, so it is approximate. A permutation "
+                                             "test does not assume it.")
+            self.approximate.setToolTip("Noirhomme et al. (2014): on random data, cross-validated accuracy does "
+                                        "not follow the binomial distribution; the permutation test is "
+                                        "unaffected by the cross-validation")
         self.add_note("{} · {}, seed {}".format(scores.model, scores.split_text(), scores.seed))
         # the other measures on one small line, each the mean of the folds' own as accuracy is
         measures = ["balanced accuracy {:.1%}".format(scores.balanced_accuracy)]
@@ -1350,6 +1362,27 @@ class ScoresPreview(_Preview):
         self.column.addWidget(save, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         # a report states these in its own tables
         self.controls += [note, table, save]
+
+    def offer_permutation_test(self, run):
+        """A button under the note: `run(shuffles)` sets the block's permutation test, which runs it. Offered by
+        the Workbench's inspector only, so a report or a window of its own has no button that does nothing."""
+        if self.approximate is None:
+            return None
+        button = QtWidgets.QToolButton()
+        button.setText("Permutation test ({} shuffles)".format(self.SHUFFLES[0]))
+        button.setToolTip("Run the cross-validation again with the labels shuffled (Ojala & Garriga, 2010): "
+                          "{0} shuffles give p down to {1:.3g}, and take {0} times as long. Other numbers in the "
+                          "menu; the setting stays in Options.".format(self.SHUFFLES[0], 1 / (self.SHUFFLES[0] + 1)))
+        button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        menu = QtWidgets.QMenu(button)
+        for shuffles in sorted(self.SHUFFLES):
+            menu.addAction("{} shuffles".format(shuffles), lambda n=shuffles: run(n))
+        button.setMenu(menu)
+        button.clicked.connect(lambda: run(self.SHUFFLES[0]))
+        self.column.insertWidget(self.column.indexOf(self.approximate) + 1, button,
+                                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.controls.append(button)
+        return button
 
     def _add_roc(self, scores):
         """The ROC curve of every tested trial, for two conditions: how well the scores rank one above the other."""

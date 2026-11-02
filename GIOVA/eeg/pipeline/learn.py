@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from scipy import linalg
-from scipy.stats import norm, rankdata
+from scipy.stats import binom, rankdata
 
 
 # ----------------------------------------------------------------------
@@ -835,7 +835,7 @@ class Scores:
     def better_than_random(self):
         """Accuracy above the random limit; with unequal conditions balanced accuracy above its own
         limit too; and when a permutation test was run, p at most 0.05 as well."""
-        return (self.accuracy > self.random_limit and not self._balanced_fails()
+        return (above(self.accuracy, self.random_limit) and not self._balanced_fails()
                 and not (self.permutations and self.permutation_p > 0.05))
 
     @property
@@ -845,10 +845,10 @@ class Scores:
         one, else "within what chance can reach"."""
         if not self.better_than_random:
             return "within what chance can reach"
-        return "clearly above chance" if self.accuracy > self.random_limit_01 else "above chance"
+        return "clearly above chance" if above(self.accuracy, self.random_limit_01) else "above chance"
 
     def _balanced_fails(self):
-        return self.unequal and not self.balanced_accuracy > self.balanced_limit
+        return self.unequal and not above(self.balanced_accuracy, self.balanced_limit)
 
     @property
     def largest(self):
@@ -870,12 +870,14 @@ class Scores:
                 text += ("; the conditions have unequal trials (always guessing {} scores {:.1%}) and balanced "
                          "accuracy {:.1%} is not above the {:.1%} a random classifier reaches".format(
                              *self.largest, self.balanced_accuracy, self.balanced_limit))
-            elif self.permutations and self.permutation_p > 0.05 and self.accuracy > self.random_limit:
+            elif self.permutations and self.permutation_p > 0.05 and above(self.accuracy, self.random_limit):
                 text += "; the permutation test does not confirm the accuracy"
         text += " (alpha 0.05, {} tested trials; Müller-Putz et al., 2008; Combrisson & Jerbi, 2015)".format(
             self.tested)
         if self.permutations:
             text += "; permutation test p = {:.3g} ({} shuffles)".format(self.permutation_p, self.permutations)
+        else:
+            text += "; " + APPROXIMATE
         return text
 
     @property
@@ -1037,30 +1039,46 @@ def macro_f1(truth, predicted):
 
 #: Shuffles simulated for the random limit of more than two conditions, as in Müller-Putz et al. (2008).
 SIMULATIONS = 10000
+def above(accuracy, limit):
+    """Past a limit. The limits are accuracies a random classifier can reach (40 of 60, 0.6667), and a mean of
+    fold accuracies equal to one can come out a last digit larger: that is at the limit, not past it."""
+    return accuracy > limit + 1e-9
+
+
+#: What the random limit assumes, said wherever a verdict rests on it alone
+APPROXIMATE = ("the limit takes the tested trials as independent, which cross-validated ones are not, so it is "
+               "approximate (Noirhomme et al., 2014); a permutation test does not assume it")
 
 
 def random_interval(n_trials, n_classes=2, alpha=0.05, labels=None, simulations=SIMULATIONS, seed=0):
-    """(low, high): the accuracy a random classifier stays within (Müller-Putz et al., 2008).
+    """(low, high): the accuracy a random classifier stays within (Müller-Putz et al., 2008), each edge an
+    accuracy it can reach: above `high` with probability at most alpha/2, below `low` likewise.
 
-    Two conditions: the paper's binomial interval around 0.5 with the Agresti & Caffo (2000)
-    adjustment, p ± z(1-alpha/2) sqrt(p (1 - p) / (n + 4)) with p = (n/2 + 2) / (n + 4). More
-    conditions: as in the paper, by simulation - the labels in a random order scored against
-    themselves `simulations` times - and the alpha/2 and 1 - alpha/2 quantiles of that accuracy.
+    Two conditions: the exact binomial quantiles around 0.5, as Combrisson & Jerbi (2015) give the threshold
+    (the inverse binomial distribution). Müller-Putz et al. approximate the same interval by a normal one with the
+    Agresti & Caffo (2000) adjustment, 40.39% to 59.61% for 100 trials; that lets 60 correct of 100 through, which
+    a random classifier reaches 2.8% of the time, more than alpha/2, and with 12 trials it is passed 7.3% of the
+    time. More conditions: as in the paper, by simulation - the labels in a random order scored against
+    themselves `simulations` times - and the alpha/2 and 1 - alpha/2 quantiles of that accuracy, each one of
+    the simulated accuracies.
+
+    Either way the trials are taken as tested independently, which cross-validation's are not: the folds share
+    training trials, and on noise a cross-validated accuracy passes this limit more often than alpha/2
+    (Noirhomme et al., 2014). The limit is a first look; a permutation test does not assume it.
     """
     n = int(n_trials)
     if n < 1:
         raise ValueError("No tested trials")
     if n_classes == 2:
-        p = (n * 0.5 + 2) / (n + 4)
-        half = norm.ppf(1 - alpha / 2) * np.sqrt(p * (1 - p) / (n + 4))
-        return float(p - half), float(p + half)
+        return float(binom.ppf(alpha / 2, n, 0.5) / n), float(binom.ppf(1 - alpha / 2, n, 0.5) / n)
     rng = np.random.default_rng(seed)
     if labels is None:
         labels = np.arange(n) % n_classes
     labels = np.asarray(labels)
     shuffled = rng.permuted(np.tile(labels, (simulations, 1)), axis=1)
     accuracy = (shuffled == labels).mean(axis=1)
-    return float(np.quantile(accuracy, alpha / 2)), float(np.quantile(accuracy, 1 - alpha / 2))
+    return (float(np.quantile(accuracy, alpha / 2, method="inverted_cdf")),
+            float(np.quantile(accuracy, 1 - alpha / 2, method="inverted_cdf")))
 
 
 def random_limit(labels, alpha=0.05):
@@ -1074,7 +1092,7 @@ def balanced_limit(labels, alpha=0.05, simulations=SIMULATIONS, seed=0):
     when every condition has the same number of trials.
 
     With 90 trials of one condition and 10 of the other, always answering the first scores 90%,
-    well above the 59.6% limit of `random_interval`, while its balanced accuracy is 50%. The
+    well above the 60% limit of `random_interval`, while its balanced accuracy is 50%. The
     random classifier is simulated as `random_interval` does for more conditions: the labels in
     a random order scored against themselves, here by their mean recall over the conditions.
     """
@@ -1085,7 +1103,7 @@ def balanced_limit(labels, alpha=0.05, simulations=SIMULATIONS, seed=0):
     rng = np.random.default_rng(seed)
     shuffled = rng.permuted(np.tile(labels, (simulations, 1)), axis=1)
     recall = [((shuffled == c) & (labels == c)).sum(axis=1) / n for c, n in zip(classes, counts)]
-    return float(np.quantile(np.mean(recall, axis=0), 1 - alpha / 2))
+    return float(np.quantile(np.mean(recall, axis=0), 1 - alpha / 2, method="inverted_cdf"))
 
 
 def fit_and_test(model, seed, x_train, y_train, x_test):

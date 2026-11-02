@@ -24,7 +24,7 @@ from ...pipeline import block
 from ...pipeline.batch import score_nodes
 from ...pipeline import provenance
 from ...pipeline.data import Contrast
-from ...pipeline.learn import Scores
+from ...pipeline.learn import APPROXIMATE, Scores
 from .previews import CHANNEL_COLORS, picture, preview, result_line
 from ..theme import for_paper, paper, plot_background
 
@@ -52,8 +52,10 @@ REFERENCES = {
                       "A closer look on BCI results. Int J Bioelectromagn 10(1):52-55. Combrisson E, Jerbi K "
                       "(2015). Exceeding chance level by chance: the caveat of theoretical chance levels in brain "
                       "signal classification and statistical assessment of decoding accuracy. J Neurosci Methods "
-                      "250:126-136. Cohen J (1960). A coefficient of agreement for nominal scales. Educ Psychol Meas "
-                      "20(1):37-46.",
+                      "250:126-136. Noirhomme Q, Lesenfants D, Gomez F, Soddu A, Schrouff J, Garraux G, Luxen A, "
+                      "Phillips C, Laureys S (2014). Biased binomial assessment of cross-validated estimation of "
+                      "classification accuracies illustrated in diagnosis predictions. NeuroImage Clin 4:687-694. "
+                      "Cohen J (1960). A coefficient of agreement for nominal scales. Educ Psychol Meas 20(1):37-46.",
     "permutation": "Ojala M, Garriga GC (2010). Permutation tests for studying classifier performance. J Mach "
                    "Learn Res 11:1833-1863.",
     "fir": "Widmann A, Schröger E, Maess B (2015). Digital filter design for electrophysiological data - a "
@@ -438,15 +440,16 @@ def _scores_tables(report, scores):
             ("F1 (macro)", "{:.3f}".format(scores.f1) if np.isfinite(scores.f1) else "-"),
             ("ROC AUC", "{:.3f}".format(scores.auc) if scores.fold_auc else "-"),
             ("Compared with chance", scores.chance_level[0].upper() + scores.chance_level[1:]),
-            ("Random limit, alpha 0.05 / 0.01", "{:.1%} / {:.1%} ({} tested trials; Müller-Putz et al., 2008)".format(
+            ("Random limit, alpha 0.05 / 0.01", "{:.1%} / {:.1%} ({} tested trials; Müller-Putz et al., 2008; "
+                                                "Combrisson & Jerbi, 2015)".format(
                 scores.random_limit, scores.random_limit_01, scores.tested)),
             *([("Unequal conditions", "always guessing {} scores {:.1%}; balanced accuracy random limit {:.1%} "
                 "(alpha 0.05)".format(*scores.largest, scores.balanced_limit))] if scores.unequal else []),
             ("Split", "{}, seed {}".format(scores.split_text(), scores.seed)),
             ("Model", scores.model),
             ("Trials", ", ".join("{} {}".format(c, n) for c, n in scores.counts.items()))]
-    if scores.permutations:
-        rows.append(("Permutation test", "p = {:.3g} ({} shuffles)".format(scores.permutation_p, scores.permutations)))
+    rows.append(("Permutation test", "p = {:.3g} ({} shuffles)".format(scores.permutation_p, scores.permutations)
+                 if scores.permutations else "not run: " + APPROXIMATE))
     if scores.tuning_text():
         rows.append(("Tuning chose", scores.tuning_text()))
     report.table(("Measure", "Value"), rows)
@@ -561,7 +564,8 @@ def comparison_report(result, recordings_note=""):
 ACROSS_METHODS = ("Leave one recording out: each recording tested with the model trained on all the other "
                   "recordings' trials (seed {}), every step fitted on those only; the Cross-validate block's folds "
                   "and permutation test were not run. Accuracy judged against the upper limit of a random "
-                  "classifier's accuracy for the number of tested trials (alpha 0.05; Müller-Putz et al., 2008).")
+                  "classifier's accuracy for the number of tested trials (alpha 0.05; Müller-Putz et al., 2008), "
+                  "taking them as independent.")
 
 
 def _comparison_report(result, graphs, recordings_note=""):
@@ -583,7 +587,8 @@ def _comparison_report(result, graphs, recordings_note=""):
                   for j, (name, mean, sd, median, n) in enumerate(result.summary())])
     report.paragraph("Above chance: the recording's accuracy is above the upper limit a random classifier "
                      "reaches with its number of tested trials (alpha 0.05; Müller-Putz et al., 2008); "
-                     "marked * below.", note=True)
+                     "marked * below. The limit takes the tested trials as independent, which cross-validated "
+                     "ones are not, so it is approximate (Noirhomme et al., 2014).", note=True)
     report.image(render(comparison_plot(result)))
     paired = result.paired_holm()
     if paired:

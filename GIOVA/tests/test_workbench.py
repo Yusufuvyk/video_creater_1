@@ -541,6 +541,37 @@ class RunTests(unittest.TestCase):
             self.assertEqual(page.canvas.cards["cross_validate1"].state, "done")
             self.assertEqual(page.canvas.cards["psd1"].state, "")
 
+    def test_a_permutation_test_is_one_click_under_the_result(self):
+        with scratch() as directory:
+            path = save_fif(lateralised(trials=20), directory)
+            page = mi_page(path)
+            page.run()
+            wait_for_run(page)
+            page.canvas.select("cross_validate1")
+            texts = " ".join(label.text() for label in page.inspector.findChildren(QtWidgets.QLabel))
+            self.assertIn("so it is approximate", texts)                     # the limit alone: said so
+            button = next(b for b in page.inspector.findChildren(QtWidgets.QToolButton)
+                          if b.text().startswith("Permutation test"))
+            self.assertEqual(button.text(), "Permutation test (200 shuffles)")
+            self.assertEqual([a.text() for a in button.menu().actions()],
+                             ["100 shuffles", "200 shuffles", "500 shuffles", "1000 shuffles", "5000 shuffles"])
+            with mock.patch.object(page, "run") as run:
+                button.click()                                                # a click: 200
+            run.assert_called_once_with(["cross_validate1"])
+            self.assertEqual(page.graph.params("cross_validate1")["permutations"], 200)
+            button.menu().actions()[0].trigger()                              # 100, from the menu, and run
+            self.assertEqual(page.graph.params("cross_validate1")["permutations"], 100)
+            self.assertEqual(page.inspector.fields["permutations"].widget.value(), 100)   # kept in Options
+            wait_for_run(page)
+            scores = page.outputs()["cross_validate1"]["scores"]
+            self.assertEqual(scores.permutations, 100)
+            page.canvas.select("cross_validate1")
+            self.assertFalse(any(b.text().startswith("Permutation test")
+                                 for b in page.inspector.findChildren(QtWidgets.QToolButton)))
+            texts = " ".join(label.text() for label in page.inspector.findChildren(QtWidgets.QLabel))
+            self.assertIn("Permutation test: p = ", texts)
+            self.assertNotIn("so it is approximate", texts)
+
 
 class FileTests(unittest.TestCase):
     def setUp(self):

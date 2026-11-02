@@ -70,5 +70,41 @@ class FalsePositiveTests(unittest.TestCase):
         self.assertGreaterEqual(NoiseRuns.get().p.min(), 1 / (PERMUTATIONS + 1))
 
 
+class RandomLimitTests(unittest.TestCase):
+    """The random limit under its own assumption, trials tested independently: exact for two conditions."""
+
+    def test_a_random_classifier_passes_it_at_most_alpha_half_the_time(self):
+        for alpha in (0.05, 0.01):
+            for n in range(4, 401):
+                limit = learn.random_interval(n, 2, alpha)[1]
+                correct = round(limit * n)                       # the limit is an accuracy one can reach
+                self.assertAlmostEqual(limit * n, correct, places=9)
+                self.assertLessEqual(binom.sf(correct, n, 0.5), alpha / 2, (alpha, n))
+                # and the lowest such: one correct trial fewer would be passed too often
+                self.assertGreater(binom.sf(correct - 1, n, 0.5), alpha / 2, (alpha, n))
+
+    def test_an_accuracy_at_the_limit_is_not_past_it(self):
+        # 40 of 60 is the alpha 0.01 limit for 60 trials; the mean of five folds' accuracies (8, 5, 9, 11 and 7
+        # correct of 12) is 40/60 too, but comes out a last digit larger, which read "clearly above chance"
+        folds = [8 / 12, 5 / 12, 9 / 12, 11 / 12, 7 / 12]
+        limit = learn.random_interval(60, 2, 0.01)[1]
+        self.assertEqual(limit, 40 / 60)
+        self.assertGreater(np.mean(folds), limit)
+        self.assertFalse(learn.above(np.mean(folds), limit))
+        self.assertTrue(learn.above(41 / 60, limit))
+
+    def test_the_papers_normal_approximation_was_passed_too_often(self):
+        # Müller-Putz et al.'s 59.61% for 100 trials let 60 correct through: 2.8% of the time, above alpha/2
+        self.assertGreater(binom.sf(59, 100, 0.5), 0.025)
+        self.assertEqual(learn.random_interval(100, 2)[1], 0.60)
+
+    def test_a_verdict_on_the_limit_alone_says_it_is_approximate(self):
+        x, y = np.random.default_rng(1).normal(size=(40, 2)), np.repeat(["a", "b"], 20)
+        alone = learn.cross_validate(x, y, learn.Model().then("lda"))
+        self.assertIn(learn.APPROXIMATE, alone.random_text())
+        tested = learn.cross_validate(x, y, learn.Model().then("lda"), permutations=9)
+        self.assertNotIn(learn.APPROXIMATE, tested.random_text())
+
+
 if __name__ == "__main__":
     unittest.main()

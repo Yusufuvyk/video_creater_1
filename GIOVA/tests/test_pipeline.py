@@ -191,10 +191,11 @@ class LearnTests(unittest.TestCase):
         self.assertAlmostEqual(scores.chance, 0.5)
 
     def test_random_limit_is_the_papers(self):
-        # Müller-Putz et al. (2008), section 2.1: 100 trials, alpha 0.05 -> 40.39% to 59.61%
+        # Müller-Putz et al. (2008), section 2.1: 100 trials, alpha 0.05 -> 40.39% to 59.61%, a normal
+        # approximation; the exact binomial edges are the accuracies a random classifier can reach: 40% and 60%
         low, high = learn.random_interval(100, 2)
-        self.assertAlmostEqual(low, 0.4039, places=4)
-        self.assertAlmostEqual(high, 0.5961, places=4)
+        self.assertEqual((low, high), (0.40, 0.60))
+        self.assertLessEqual(abs(high - 0.5961), 0.01)                  # within one trial of the paper's
         # their simulation, table 1 (alpha 5% / 1%), trials per class -> upper limit in %
         for per_class, classes, five, one in ((40, 3, 41.7, 45.0), (40, 4, 31.9, 34.4), (80, 4, 29.7, 31.3),
                                               (20, 8, 18.1, 19.4), (160, 3, 37.7, 39.0)):

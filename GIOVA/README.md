@@ -43,8 +43,8 @@ Around 40 blocks in plain groups:
 
 **Honest results.** Every step of a model is fitted inside each training fold, never on the test trials.
 Accuracy is read against what a random classifier could reach with that many trials (Müller-Putz et al.,
-2008; Combrisson & Jerbi, 2015), balanced accuracy is given when conditions are unequal, and a permutation
-test is one click away.
+2008; Combrisson & Jerbi, 2015), a first look that takes the tested trials as independent; a permutation test,
+which does not, is one click under the result. Balanced accuracy is given when conditions are unequal.
 
 **Compare.** Run several pipelines over many recordings, side by side, with paired statistics, or train on
 the other recordings and test on each one in turn.

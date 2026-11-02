@@ -896,14 +896,20 @@ Preprocessing before the trials (Filter, ICA) is not part of the folds.</p>
 line to beat with few trials (Müller-Putz et al., 2008; Combrisson &amp; Jerbi, 2015). GIOVA gives the upper
 limit of that spread for the number of tested trials, at alpha 0.05 and 0.01, and says where the accuracy
 stands in three steps rather than a yes or no: <i>clearly above chance</i> past the 0.01 limit, <i>above
-chance</i> past the 0.05 one, <i>within what chance can reach</i> below it. Two conditions: the binomial
-interval; more: a simulation. With 100 trials the 0.05 limit is 59.6%, so 59% is within what chance can reach. With unequal trials (90 and 10) always guessing the larger scores 90%, so balanced
-accuracy must also beat a random classifier simulated for the same trials. The limit is a reference, not a
-test of the cross-validation itself.</p>
+chance</i> past the 0.05 one, <i>within what chance can reach</i> below it. Two conditions: the exact binomial
+limit (Combrisson &amp; Jerbi, 2015); more: a simulation. With 100 trials the 0.05 limit is 60%: 60 correct is
+within what chance can reach, 61 above it. With unequal trials (90 and 10) always guessing the larger scores
+90%, so balanced accuracy must also beat a random classifier simulated for the same trials.</p>
+<p>The limit takes the tested trials as independent. Cross-validated ones are not: the folds share their training
+trials, and on noise a cross-validated accuracy passes the limit more often than alpha says (Noirhomme et al.,
+2014). So the limit is approximate, a first look. A permutation test does not assume independence: run one
+(<i>Permutation test</i> under the result, or in Cross-validate's Options) before calling a result above
+chance.</p>
 <h3>Permutation test</h3>
 <p>The whole cross-validation is run again with the labels shuffled, B times; p = (1 + the number that score
 as well or better) / (B + 1) (Ojala &amp; Garriga, 2010). The smallest p is 1 / (B + 1): 0.01 for 99. When it is
-run, being above chance also needs p ≤ 0.05. Trials are shuffled as independent units.</p>
+run, being above chance also needs p ≤ 0.05. Trials are shuffled as independent units. Under the result, <i>Permutation
+test</i> runs one with 200 shuffles (p down to 0.005) or another number; the setting stays in Options.</p>
 <h3>Time left</h3>
 <p>Guessed from the pace of the current block's own steps (its folds, its permutations) once it has done a
 few; quick blocks before it say nothing of how long a cross-validation takes. <i>in this block</i>: more blocks

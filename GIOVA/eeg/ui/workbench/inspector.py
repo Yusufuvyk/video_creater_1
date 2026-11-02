@@ -328,6 +328,8 @@ class Inspector(QtWidgets.QWidget):
     renamed = QtCore.Signal(str)
     #: node id of a Recording block whose MATLAB file's layout is to be chosen
     layout_requested = QtCore.Signal(str)
+    #: node id of a block to compute now (a permutation test asked for under its result)
+    run_requested = QtCore.Signal(str)
 
     def __init__(self, choices_for=None, rate_for=None, input_for=None):
         super().__init__()
@@ -668,6 +670,9 @@ class Inspector(QtWidgets.QWidget):
                     self.previews[key] = widget
                 if hasattr(widget, "band_kept"):
                     widget.band_kept.connect(self._add_band)
+                if (hasattr(widget, "offer_permutation_test") and not value.permutations
+                        and "permutations" in self.graph.params(self.node_id)):
+                    widget.offer_permutation_test(self._permutation_test)
                 self.result_box.addWidget(widget)
                 self.result = widget
 
@@ -680,6 +685,16 @@ class Inspector(QtWidgets.QWidget):
         self.windows.append(window)          # kept, so it is not collected while open
         window.show()
         return window
+
+    def _permutation_test(self, shuffles):
+        """Asked for under a result: the block's permutation test set, as if typed in Options, and run."""
+        node_id = self.node_id
+        field = self.fields.get("permutations")
+        if field is not None:
+            field.widget.setValue(int(shuffles))
+        else:
+            self._edited("permutations", int(shuffles))
+        self.run_requested.emit(node_id)
 
     def _add_band(self, band):
         """A band typed for the head maps joins the block's Bands (named apart from those already there)."""

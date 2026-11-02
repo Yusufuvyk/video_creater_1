@@ -353,7 +353,8 @@ class CompareWindow(QtWidgets.QDialog):
                                 "recording's tested trials (alpha 0.05). Double-click a recording for its full "
                                 "result: folds, confusion matrix, ROC curve")
         note.setToolTip("The binomial limit of a random classifier: Müller-Putz et al. (2008); Combrisson & Jerbi "
-                        "(2015)")
+                        "(2015). It takes the tested trials as independent, which cross-validated ones are not, "
+                        "so it is approximate (Noirhomme et al., 2014)")
         note.setWordWrap(True)
         note.setStyleSheet(muted())
         self.results_column.addWidget(note)

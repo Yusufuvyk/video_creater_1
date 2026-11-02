@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- **"Above chance", said as it is.** With two conditions the random limit is the exact binomial quantile
+  (Combrisson & Jerbi, 2015): an accuracy a random classifier passes at most alpha/2 of the time. Müller-Putz et
+  al.'s normal approximation, used before, was passed up to 7.3% of the time (with 12 trials). An accuracy equal to
+  the limit (40 of 60) is at it, not past it, however its mean over the folds rounds. The result, the report and
+  Help say that the limit takes the tested trials as independent, which cross-validated ones are not (Noirhomme et
+  al., 2014), and a **permutation test is one click under the result**: 200 shuffles, or 100 to 5000 from its menu;
+  the setting stays in Cross-validate's Options.
+- **Fixed: a marker file saved by a spreadsheet lost its first marker.** Excel's "CSV UTF-8" starts with a byte
+  order mark, and the first time was read as text and skipped as a header.
+- **Fixed: trials edited as text moved by milliseconds.** The Workbench's text fields wrote six significant
+  digits, so a trial at 3600.125 s was saved as 3600.12 s; they keep twelve now, and read back the numbers they
+  write in exponent form (1e-05). Ordinary values look as before.
+- Game folders are listed in the same order on every system.
+- Tests drawn from the literature: no learning step learns from the test trials (Kapoor & Narayanan, 2023), the
+  permutation test's false positive rate on noise, metamorphic relations (amplitude, channel order, time shift,
+  condition names, units), property-based round trips of every text field and pipeline file (Hypothesis), and
+  marker files. A lint configuration (ruff) and CI on Windows and Linux.
 - **Time-frequency: the head map and the statistics from either transform.** A new setting (Head map and
   statistics from) takes their window means from a separate STFT of each electrode (fast, the default, the same
   numbers as before) or from the maps' own transform. Their source is said in the methods, the captions and Help;

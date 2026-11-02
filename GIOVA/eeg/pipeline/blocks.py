@@ -1355,7 +1355,8 @@ class CrossValidate(Block):
               when=applies_when(scheme=learn.CHRONOLOGICAL)),
         Param("permutations", 0, "Permutation test", "0: off. Otherwise the whole cross-validation is run this "
               "many times again with the labels shuffled, and p is the share that scores as well (Ojala & "
-              "Garriga, 2010). Stricter than the random limit, and slow: 200 shuffles take 200 runs.",
+              "Garriga, 2010). It does not take the tested trials as independent, as the random limit does, "
+              "which cross-validated ones are not (Noirhomme et al., 2014). Slow: 200 shuffles take 200 runs.",
               advanced=True),
         Param("seed", 42, "Shuffle seed", "Same seed, same folds: results can be repeated exactly.",
               advanced=True),
@@ -1379,10 +1380,15 @@ class CrossValidate(Block):
         text = ("{}stratified {}-fold cross-validation (seed {}); every step fitted on the training "
                 "folds only.".format(repeated, params["folds"], params["seed"])).capitalize()
         text += (" Accuracy judged against the upper limit of a random classifier's accuracy for the number "
-                 "of tested trials (alpha 0.05; Müller-Putz et al., 2008); with unequal conditions, balanced "
+                 "of tested trials (alpha 0.05; Müller-Putz et al., 2008), the exact binomial quantile for two "
+                 "conditions (Combrisson & Jerbi, 2015), which takes the tested trials as independent; with "
+                 "unequal conditions, balanced "
                  "accuracy also against a random classifier's, simulated for the same trials. Balanced accuracy, "
                  "Cohen's kappa (Cohen, 1960) and macro F1 are, like accuracy, the mean of the folds' own.")
         if params["permutations"]:
             text += (" Permutation test with {} label shuffles (Ojala & Garriga, 2010); better than random "
                      "also needs p ≤ 0.05.".format(int(params["permutations"])))
+        else:
+            text += (" No permutation test was run: cross-validated trials are not independent, so the random "
+                     "limit is approximate (Noirhomme et al., 2014).")
         return text
