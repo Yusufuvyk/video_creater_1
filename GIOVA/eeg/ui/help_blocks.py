@@ -227,15 +227,18 @@ def _items(lines):
 
 
 def _only_with(kind, param):
-    """For a setting the Workbench shows only with certain values of another: " (with Method stft)"; else ""."""
+    """For a setting the Workbench shows only with certain values of others: " (with Method stft)", " (not with
+    Method wavelet, Head map and statistics from maps)"; else ""."""
     labels = {p.name: p.label or p.name for p in kind.params}
 
     def said(value):
         return {True: "on", False: "off"}[value] if isinstance(value, bool) else str(value)
 
-    parts = ["{} {}".format(labels.get(name, name), " or ".join(said(v) for v in values))
-             for name, values in param.when or ()]
-    return " <i>(with {})</i>".format(html.escape(", ".join(parts))) if parts else ""
+    def words(conditions):
+        return ", ".join("{} {}".format(labels.get(name, name), " or ".join(said(v) for v in values))
+                         for name, values in conditions or ())
+    out = " <i>(with {})</i>".format(html.escape(words(param.when))) if param.when else ""
+    return out + (" <i>(not with {})</i>".format(html.escape(words(param.unless))) if param.unless else "")
 
 
 def page(type_name):

@@ -1718,7 +1718,7 @@ class TFPreview(_Preview):
             self.caption.setText(str(exc))
             return
         label = ("{} ERD / ERS (%)".format(name) if kind == ep.ERD_MAP else
-                 "{} power (dB re 1 {})".format(name, result.tf[0].units))
+                 "{} power (dB re 1 {})".format(name, getattr(result, "topo_units", "µV²/Hz")))
         self.head.draw(result.names, panels, "{}, {:g}–{:g} s".format(label, *result.settings.active),
                        diverging=kind == ep.ERD_MAP or len(panels) == 3,
                        highlight={result.names[c] for c in result.channels})

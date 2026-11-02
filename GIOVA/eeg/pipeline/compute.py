@@ -18,8 +18,8 @@ import warnings
 import numpy as np
 
 from ..core.analysis_profiles import parse_sequence
-from ..core.epochs import (CONDITION, EpochSettings, EventTable, PER_HZ, POOLED, STFT, WINDOW, compute_epochs,
-                           compute_trials, events_for, load_label_map, tf_method)
+from ..core.epochs import (CONDITION, EpochSettings, EventTable, PER_HZ, POOLED, SCALP_STFT, STFT, WINDOW,
+                           compute_epochs, compute_trials, events_for, load_label_map, tf_method)
 from ..core.config import BANDS
 from ..core.feature_profiles import FeatureProfile, extract, mean_values
 from ..core.sources import downsample
@@ -916,7 +916,8 @@ def signal_features(epochs, selected=("rms", "mobility", "complexity", "entropy"
 def time_frequency(source, channels=("C3", "Cz", "C4"), conditions=(), tmin=-1.0, tmax=4.0, baseline=(-1.0, 0.0),
                    active=(0.5, 2.5), method=STFT, fmin=4.0, fmax=40.0, window=0.5, overlap=0.9, smooth=0.5,
                    bands=MU_BETA, topography=False, baseline_mode=WINDOW, reference="", erd_mode=POOLED,
-                   n_cycles=0.5, wavelet=CWT_WAVELET, reject_uv=0.0, width=PER_HZ, progress=None):
+                   n_cycles=0.5, wavelet=CWT_WAVELET, reject_uv=0.0, width=PER_HZ, scalp=SCALP_STFT,
+                   progress=None):
     """Time-frequency power and ERD/ERS of a recording (cut into trials from `tmin` to `tmax` s around each
     event) or of trials as they come (`tmin` / `tmax` then unused).
 
@@ -924,8 +925,9 @@ def time_frequency(source, channels=("C3", "Cz", "C4"), conditions=(), tmin=-1.0
     frequency (clipped to 2..12) or one complex Morlet `wavelet` (cmorB-C) for every frequency; "morlet" and
     "cwt", the older names of those two, are read as well. erd_mode: "pooled" (mean power against mean
     baseline) or "mean_of_trials" (each trial's % averaged), for every map, band course and trace; reject_uv: a
-    trial straying further than this from its mean on an analysed channel is left out (0: off). All as
-    `core.epochs.EpochSettings`."""
+    trial straying further than this from its mean on an analysed channel is left out (0: off); scalp: what the
+    head map and the statistics are window means of, a separate STFT ("stft") or the maps' own transform
+    ("maps"). All as `core.epochs.EpochSettings`."""
     trials = isinstance(source, Epochs)
     available = list(source.names if trials else source.channel_names)
     names = names_of(channels)
@@ -945,7 +947,7 @@ def time_frequency(source, channels=("C3", "Cz", "C4"), conditions=(), tmin=-1.0
         method=tf_method(method, width), fmin=fmin, fmax=fmax, window=window, overlap=overlap, smooth=smooth,
         bands=[list(b) for b in bands], topography=bool(topography), filters={}, baseline_mode=baseline_mode,
         reference=reference, erd_mode=erd_mode, n_cycles=float(n_cycles), wavelet=wavelet,
-        reject_uv=float(reject_uv))
+        reject_uv=float(reject_uv), scalp=scalp)
     if trials:
         off = list(source.unmeasured)
         if names and not [n for n in names if n not in off]:

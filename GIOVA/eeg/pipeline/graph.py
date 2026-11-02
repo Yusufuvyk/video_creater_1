@@ -78,10 +78,14 @@ class Param:
     #: always. One that does not apply keeps its value, in the file too: the Workbench only hides it (an STFT
     #: window while the method is Morlet), so switching back finds it as it was.
     when: tuple = None
+    #: written as `when`: the parameter does not apply while every one of these is met
+    unless: tuple = None
 
     def applies(self, params):
         """Whether this parameter matters with the block's other settings as they are, `params`."""
-        return all(params.get(name) in values for name, values in self.when or ())
+        def met(conditions):
+            return all(params.get(name) in values for name, values in conditions)
+        return met(self.when or ()) and not (self.unless and met(self.unless))
 
 
 def applies_when(**conditions):

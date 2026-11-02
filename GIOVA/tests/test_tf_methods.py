@@ -132,6 +132,44 @@ class HeadMapTextTests(unittest.TestCase):
         self.assertIn("separate STFT", preview.caption.text())
 
 
+class ScalpSourceTests(unittest.TestCase):
+    """The head map and the statistics: window means of a separate STFT (fast, as before) or of the maps' own
+    transform, as the user chooses."""
+
+    def test_from_the_maps_the_window_means_are_the_maps_own(self):
+        raw = recording()
+        common = {**COMMON, "smooth": 0.0, "bands": [["alpha", 8.0, 12.0]]}
+        result = compute.time_frequency(raw, method=ep.WAVELET, scalp=ep.SCALP_MAPS, **common)
+        channel = result.tf[0]                                         # C3, the maps' own (unsmoothed) power
+        rows = (channel.freqs >= 8.0) & (channel.freqs <= 12.0)
+        active = (channel.times >= 1.5 - 1e-9) & (channel.times <= 2.5 + 1e-9)
+        power = channel.power["A"][:, rows][:, :, active].mean(axis=(1, 2)).mean()
+        base = channel.baseline["A"][:, rows].mean()
+        self.assertAlmostEqual(result.topo_pooled["alpha"]["A"][0], 100 * (power - base) / base, places=3)
+        self.assertEqual(result.topo_units, "µV²")                     # wavelet power, said on the head map
+        stft = compute.time_frequency(raw, method=ep.WAVELET, **common)
+        self.assertEqual(stft.topo_units, "µV²/Hz")                    # the default: a separate STFT's density
+        self.assertNotAlmostEqual(stft.topo_pooled["alpha"]["A"][0], result.topo_pooled["alpha"]["A"][0], places=3)
+
+    def test_the_default_gives_the_same_numbers_as_before(self):
+        raw = recording()
+        before = compute.time_frequency(raw, method=ep.WAVELET, **COMMON)            # no scalp given
+        now = compute.time_frequency(raw, method=ep.WAVELET, scalp=ep.SCALP_STFT, **COMMON)
+        for band in before.topo_pooled:
+            np.testing.assert_array_equal(before.topo_pooled[band]["A"], now.topo_pooled[band]["A"])
+
+    def test_the_stft_window_is_shown_while_an_stft_is_computed(self):
+        params = {p.name: p for p in block("erd").params}
+        defaults = block("erd").defaults()
+        for method, scalp, shown in ((ep.STFT, ep.SCALP_STFT, True), (ep.STFT, ep.SCALP_MAPS, True),
+                                     (ep.WAVELET, ep.SCALP_STFT, True), (ep.WAVELET, ep.SCALP_MAPS, False)):
+            settings = {**defaults, "method": method, "scalp": scalp}
+            self.assertEqual(params["window"].applies(settings), shown, (method, scalp))
+            self.assertEqual(params["overlap"].applies(settings), shown, (method, scalp))
+        sentence = block("erd").describe({**defaults, "method": ep.WAVELET, "scalp": ep.SCALP_MAPS})
+        self.assertIn("window means of the maps' own transform (complex Morlet wavelets)", sentence)
+
+
 class EmptyCellTests(unittest.TestCase):
     """As tables in papers (APA): a cell whose value does not apply is blank; one that could not be computed has a
     dash, and the caption says what it means."""

@@ -28,7 +28,7 @@ class WhenTests(unittest.TestCase):
         for type_name, kind in REGISTRY.items():
             params = {p.name: p for p in kind.params}
             for param in kind.params:
-                for name, values in param.when or ():
+                for name, values in (param.when or ()) + (param.unless or ()):
                     self.assertIn(name, params, "{}.{}".format(type_name, param.name))
                     choices = params[name].choices
                     if choices is not None:

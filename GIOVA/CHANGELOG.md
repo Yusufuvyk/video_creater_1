@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Time-frequency: the head map and the statistics from either transform.** A new setting (Head map and
+  statistics from) takes their window means from a separate STFT of each electrode (fast, the default, the same
+  numbers as before) or from the maps' own transform. Their source is said in the methods, the captions and Help;
+  the head map counts the electrodes it is drawn from, says that the positions are the standard 10-05 template,
+  and gives its power in its own units (it said µV² for an STFT density under the wavelet method).
+- **Empty table cells as in papers (APA)**: blank where a value does not apply, a dash where it could not be
+  computed, explained beside the table.
 - **The Workbench's sheet moves freely.** It has no edge and no scroll bars; zooming eases toward the mouse, from
   5 % to 400 %. A zoom bar in its lower left corner shows the level and offers 50-200 %, the whole pipeline and the
   selected blocks (keys 0, 1, 2). A block or a wire dragged to the sheet's edge moves it along, and each tab opens

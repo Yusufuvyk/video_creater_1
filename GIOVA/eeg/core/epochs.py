@@ -54,6 +54,10 @@ def tf_method(method, width=PER_HZ):
 #: Frequencies a CWT is computed at, evenly from the lowest to the highest (as the lab's scalogram).
 CWT_FREQS = 128
 POOLED, MEAN_OF_TRIALS = "pooled", "mean_of_trials"
+#: What the head map and the statistics are window means of: a separate STFT of each electrode (fast on many
+#: electrodes), or the maps' own transform (the method chosen, not smoothed).
+SCALP_STFT, SCALP_MAPS = "stft", "maps"
+SCALP_SOURCES = (SCALP_STFT, SCALP_MAPS)
 #: What ERD is relative to: a window inside every trial (cued designs), or the
 #: mean power of a reference condition (block designs: eyes closed vs open).
 WINDOW, CONDITION = "window", "condition"
@@ -245,6 +249,7 @@ class EpochSettings:
     topography: bool = True
     baseline_mode: str = WINDOW
     reference: str = ""                              # condition used when baseline_mode == CONDITION
+    scalp: str = SCALP_STFT                          # what the head map and statistics are window means of
 
     def to_dict(self):
         return asdict(self)
@@ -279,6 +284,8 @@ class EpochSettings:
             raise ValueError("The CWT needs a complex Morlet, e.g. cmor1.5-1.0")
         if self.erd_mode not in (POOLED, MEAN_OF_TRIALS):
             raise ValueError("ERD mode must be pooled or mean of trials")
+        if self.scalp not in SCALP_SOURCES:
+            raise ValueError("The head map is computed from {} or {}".format(*SCALP_SOURCES))
         if not 0 <= self.fmin < self.fmax or self.fmax > fs / 2:
             raise ValueError("Frequency range must be 0 <= low < high <= Nyquist ({:g} Hz)".format(fs / 2))
         if self.window <= 0 or not 0 <= self.overlap < 1 or self.n_cycles <= 0 or self.smooth < 0 or self.reject_uv < 0:
@@ -327,7 +334,8 @@ class EpochResult:
     topo_channels: list = field(default_factory=list)   # channel indices in `topo`
     topo: dict = field(default_factory=dict)             # band -> condition -> (n_epochs, n_topo) ERD%
     topo_pooled: dict = field(default_factory=dict)      # band -> condition -> (n_topo,) pooled ERD%
-    topo_power: dict = field(default_factory=dict)       # band -> condition -> (n_topo,) mean band PSD, µV²/Hz
+    topo_power: dict = field(default_factory=dict)       # band -> condition -> (n_topo,) mean band power
+    topo_units: str = "µV²/Hz"                           # of topo_power: the scalp transform's units
 
     @property
     def rejected(self):
@@ -467,10 +475,14 @@ def padded_trials(x, starts, n, reach):
 
 
 def window_mean_settings(settings):
-    """The transform every electrode's window means (the head map, the statistics) come from, whatever the method
-    of the detail maps: an STFT with the same window, at most 50 % overlap and no smoothing, because only means
-    over the baseline and active windows are taken. One method across the scalp, and a band ratio does not depend
-    on the PSD-vs-power unit difference."""
+    """The transform every electrode's window means (the head map, the statistics) come from.
+
+    By default (scalp SCALP_STFT) an STFT with the block's window, at most 50 % overlap and no smoothing, whatever
+    the method of the detail maps: only means over the baseline and active windows are taken, it is fast on 64
+    electrodes, and a band ratio does not depend on the PSD-vs-power unit difference. With SCALP_MAPS, the maps'
+    own transform, not smoothed: one transform for everything shown, slower with wavelets on many electrodes."""
+    if settings.scalp == SCALP_MAPS:
+        return EpochSettings(**{**settings.to_dict(), "smooth": 0.0})
     return EpochSettings(**{**settings.to_dict(), "method": STFT, "overlap": min(settings.overlap, 0.5),
                             "smooth": 0.0})
 
@@ -480,6 +492,9 @@ def window_means_text(settings, topography=None):
     stft = window_mean_settings(settings)
     where = "every electrode" if (settings.topography if topography is None else topography) else \
         "each analysed channel"
+    if settings.scalp == SCALP_MAPS:
+        return ("The head map and the statistics are window means of the maps' own transform ({}), not smoothed, "
+                "on {}.".format("STFT" if settings.method == STFT else "complex Morlet wavelets", where))
     same = settings.method == STFT and stft.overlap == settings.overlap and not settings.smooth
     if same:
         return "The head map and the statistics are window means of the same STFT, on {}.".format(where)
@@ -600,7 +615,7 @@ def compute_epochs(data, fs, names, channels, events, settings, progress=None, i
         psd[cond] = (spectra.mean(axis=0),
                      spectra.std(axis=0, ddof=1) / np.sqrt(k) if k > 1 else np.zeros(spectra.shape[1:]))
 
-    stft_settings = window_mean_settings(settings)
+    scalp_settings = window_mean_settings(settings)
 
     def decompose(x, cond, method_settings, amplitudes=None):
         reach = wavelet_reach(fs, method_settings)
@@ -633,6 +648,7 @@ def compute_epochs(data, fs, names, channels, events, settings, progress=None, i
                 for cond, (f, t, p, _, u) in spectra.items()}
 
     tf = []
+    topo_units = "µV²/Hz"
     topo_values = {band[0]: {cond: [] for cond in conditions} for band in settings.bands}
     topo_pooled = {band[0]: {cond: [] for cond in conditions} for band in settings.bands}
     topo_power = {band[0]: {cond: [] for cond in conditions} for band in settings.bands}
@@ -649,9 +665,9 @@ def compute_epochs(data, fs, names, channels, events, settings, progress=None, i
                                 {cond: d[3] for cond, d in detail.items()}, first[4], amplitudes))
         if c not in topo_channels:
             continue
-        spectra = with_reference({cond: decompose(x, cond, stft_settings) for cond in conditions})
+        spectra = with_reference({cond: decompose(x, cond, scalp_settings) for cond in conditions})
         for cond in conditions:
-            freqs, frame_times, power, base, _ = spectra[cond]
+            freqs, frame_times, power, base, topo_units = spectra[cond]
             act = _frames(frame_times, settings.active)
             for name, low, high in settings.bands:
                 rows = _band_rows(freqs, low, high)
@@ -669,7 +685,8 @@ def compute_epochs(data, fs, names, channels, events, settings, progress=None, i
     return EpochResult(fs, settings, list(names), list(channels), conditions, times, epochs,
                        {cond: [eid for eid, _ in used[cond]] for cond in conditions},
                        evoked, psd_freqs, psd, tf, topo_channels, topo, pooled,
-                       {name: {cond: np.asarray(v[cond]) for cond in conditions} for name, v in topo_power.items()})
+                       {name: {cond: np.asarray(v[cond]) for cond in conditions} for name, v in topo_power.items()},
+                       topo_units)
 
 
 def compute_trials(trials, fs, names, labels, tmin, channels, settings, ids=None, rejected=(), progress=None):

@@ -859,6 +859,8 @@ class CompareWindows(Block):
 METHOD_NAMES = {ep.STFT: "STFT", ep.WAVELET: "Wavelet"}
 #: Settings only a wavelet reads, and those of each way of giving its width.
 WAVELET_ONLY = applies_when(method=ep.WAVELET)
+#: Wavelet maps with the head map drawn from them: no STFT is computed at all.
+WAVELET_SCALP = applies_when(method=ep.WAVELET, scalp=ep.SCALP_MAPS)
 
 
 @register
@@ -893,16 +895,21 @@ class TimeFrequency(Block):
               "2πC√(B/2): cmor1.5-1.0 spans 5.44 cycles; a larger B or C, more cycles (sharper in frequency, "
               "blurrier in time).", when=applies_when(method=ep.WAVELET, width=ep.FIXED)),
         Param("fmin", 4.0, "Lowest (Hz)", advanced=True), Param("fmax", 40.0, "Highest (Hz)", advanced=True),
-        # shown with every method: the head map and the statistics always come from an STFT with this window
-        Param("window", 0.5, "STFT window (s)", "The STFT's window. The head map and the statistics are window means "
-              "of an STFT with this window whatever the method, so it applies to Wavelet too.", advanced=True),
+        # an STFT is computed unless the maps are wavelets and the head map is drawn from them too
+        Param("window", 0.5, "STFT window (s)", "The STFT's window: the maps' with STFT, and the one the head map "
+              "and the statistics come from unless they are drawn from the wavelet maps themselves.", advanced=True,
+              unless=WAVELET_SCALP),
         Param("overlap", 0.9, "Overlap", "Of the STFT's frames; the STFT of the head map and the statistics "
-              "overlaps them by at most 50 %.", advanced=True),
+              "overlaps them by at most 50 %.", advanced=True, unless=WAVELET_SCALP),
         Param("smooth", 0.5, "Smoothing (s)", "Power smoothed over this long in time, per trial, before ERD. "
               "0: none, so one trial's amplitude is its raw |STFT| or |wavelet|.", advanced=True),
         Param("bands", [["mu", 8.0, 13.0], ["beta", 13.0, 30.0]], "Bands", advanced=True),
         Param("topography", False, "Scalp map", "ERD of every electrode, for the head map. Slower.",
               advanced=True),
+        Param("scalp", ep.SCALP_STFT, "Head map and statistics from", "stft: window means of a separate STFT of "
+              "each electrode, fast on many electrodes (the STFT window above, at most 50 % overlap). maps: window "
+              "means of the maps' own transform, so everything shown comes from one transform; slower with "
+              "wavelets on many electrodes.", choices=ep.SCALP_SOURCES, advanced=True),
         Param("baseline_mode", ep.WINDOW, "Reference", "window: each trial's own baseline window; condition: "
               "the mean power of a reference condition (eyes open for eyes closed).",
               choices=(ep.WINDOW, ep.CONDITION), advanced=True),
@@ -959,7 +966,8 @@ class TimeFrequency(Block):
                   if params["reject_uv"] else "")
         reject += " " + ep.window_means_text(ep.EpochSettings(
             method=ep.tf_method(params["method"], params["width"]), window=params["window"],
-            overlap=params["overlap"], smooth=params["smooth"], topography=params["topography"]))
+            overlap=params["overlap"], smooth=params["smooth"], topography=params["topography"],
+            scalp=params["scalp"]))
         if params["baseline_mode"] == ep.CONDITION:
             reference = ("'{}'".format(params["reference"]) if str(params["reference"]).strip()
                          else "the first condition of the trials")
