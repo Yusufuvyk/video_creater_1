@@ -63,7 +63,7 @@ FIF, BrainVision and EEGLAB.
 
 ## Checked, not assumed
 
-- **562 automated tests** run before every build, and the packaged program checks itself (`GIOVA.exe --selftest`).
+- **Over 600 automated tests** run before every build, and the packaged program checks itself (`GIOVA.exe --selftest`).
 - **Against the reference libraries.** CSP, LDA and every classifier give the same predictions as MNE and
   scikit-learn on the same folds; tuning picks the same values as scikit-learn's `GridSearchCV`.
 - **On real data.** On the 52 subjects of the Cho2017 motor imagery dataset, CSP + LDA averaged 65.3%,
