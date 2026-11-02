@@ -225,6 +225,19 @@ def _items(lines):
     return "<ul>" + "".join("<li>{}</li>".format(html.escape(line)) for line in lines) + "</ul>"
 
 
+
+def _only_with(kind, param):
+    """For a setting the Workbench shows only with certain values of another: " (with Method stft)"; else ""."""
+    labels = {p.name: p.label or p.name for p in kind.params}
+
+    def said(value):
+        return {True: "on", False: "off"}[value] if isinstance(value, bool) else str(value)
+
+    parts = ["{} {}".format(labels.get(name, name), " or ".join(said(v) for v in values))
+             for name, values in param.when or ()]
+    return " <i>(with {})</i>".format(html.escape(", ".join(parts))) if parts else ""
+
+
 def page(type_name):
     """The block's Help page."""
     kind = g.block(type_name)
@@ -239,7 +252,8 @@ def page(type_name):
              "<h3>It cannot</h3>", _items(cannot)]
     if kind.params:
         rows = "".join("<tr><td>{}</td><td>{}</td></tr>".format(
-            html.escape(p.label or p.name) + (" <i>(Options)</i>" if p.advanced else ""), html.escape(p.help or ""))
+            html.escape(p.label or p.name) + (" <i>(Options)</i>" if p.advanced else "") + _only_with(kind, p),
+            html.escape(p.help or ""))
             for p in sorted(kind.params, key=lambda p: p.advanced))
         parts += ["<h3>Settings</h3>", "<table><tr><th>Setting</th><th>What it does</th></tr>{}</table>".format(rows)]
     examples = used_in(type_name)

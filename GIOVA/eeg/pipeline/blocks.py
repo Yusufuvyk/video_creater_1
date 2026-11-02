@@ -1,7 +1,7 @@
 """The blocks a pipeline is built from.
 
 Each block is a thin wrapper around a function `core` already has and has been
-checked against (HOW_EEG_STUDIO_COMPUTES.md): the Workbench adds a way to join
+checked against (the tests under tests/): the Workbench adds a way to join
 steps, not new ways to compute them. The exceptions are the learning blocks,
 whose arithmetic is in `pipeline.learn`. What a block computes is a plain
 function in `pipeline.compute`, which an exported script calls too; the block
@@ -18,7 +18,7 @@ from pathlib import Path
 from ..core import epochs as ep
 from ..core.wavelets import CWT_WAVELET, DISCRETE
 from .graph import (Block, CONTRAST, EPOCHS, FEATURES, ICA, MODEL, Param, Port, RAW, SCORES, SPECTRUM, TF,
-                    block, register)
+                    applies_when, block, register)
 from . import compute
 from .compute import LEFT_OUT, UNIT_FACTORS, trial_numbers, trial_text  # noqa: F401  (used by the inspector)
 from . import filters as fl
@@ -37,6 +37,13 @@ CATEGORIES = (INPUT, PREPROCESS, TRIALS, SPECTRAL, FEATURE, STATISTICS, AUGMENT,
 GROUPS = {c: LEARNING for c in (AUGMENT, SPATIAL, RIEMANN, SCALING, CLASSIFIERS, EVALUATION)}
 
 _names = compute.names_of
+
+#: When a setting applies (graph.Param.when): the Workbench shows each one only where it means something.
+TUNED, UNTUNED = applies_when(tune=True), applies_when(tune=False)
+#: Filter designs and the settings each one reads: the order (IIR), the ripple, the attenuation, the transition.
+IIR_ONLY = applies_when(design=fl.IIR)
+RIPPLE = applies_when(design=("chebyshev1", "elliptic"))
+ATTENUATION = applies_when(design=("chebyshev2", "elliptic"))
 
 
 def _port_type(kind, output):
@@ -247,7 +254,7 @@ class Reference(Block):
               "the channels named below (e.g. mastoids); laplacian: each channel minus the mean of its four "
               "nearest electrodes (standard 10-05 positions), which sharpens local rhythms such as mu over C3 "
               "and C4.", choices=("average", "channels", "laplacian")),
-        Param("channels", [], "Reference channels"),
+        Param("channels", [], "Reference channels", when=applies_when(mode="channels")),
     )
 
     def run(self, inputs, params, context):
@@ -285,11 +292,14 @@ class Filter(Block):
         Param("kind", fl.PASS, "Band", "pass: keep between the cut-offs; stop: remove between them.",
               choices=(fl.PASS, fl.STOP), advanced=True),
         Param("phase", "zero", "Phase", "zero: no delay, for offline analysis; causal: forward only, as a live "
-              "system would filter.", choices=fl.PHASES, advanced=True),
-        Param("order", 4, "Order", "IIR only. A band-pass of order 4 has 8 poles.", advanced=True),
-        Param("ripple", 1.0, "Pass-band ripple (dB)", "Chebyshev I and elliptic.", advanced=True),
-        Param("attenuation", 40.0, "Stop-band attenuation (dB)", "Chebyshev II and elliptic.", advanced=True),
-        Param("transition", 0.0, "Transition (Hz)", "FIR only. 0: automatic, as in MNE.", advanced=True),
+              "system would filter. The ideal filter is zero-phase only.", choices=fl.PHASES, advanced=True,
+              when=applies_when(design=fl.IIR + ("fir",))),
+        Param("order", 4, "Order", "IIR only. A band-pass of order 4 has 8 poles.", advanced=True, when=IIR_ONLY),
+        Param("ripple", 1.0, "Pass-band ripple (dB)", "Chebyshev I and elliptic.", advanced=True, when=RIPPLE),
+        Param("attenuation", 40.0, "Stop-band attenuation (dB)", "Chebyshev II and elliptic.", advanced=True,
+              when=ATTENUATION),
+        Param("transition", 0.0, "Transition (Hz)", "FIR only. 0: automatic, as in MNE.", advanced=True,
+              when=applies_when(design="fir")),
         Param("notch_q", 30.0, "Notch Q", advanced=True),
         Param("notches", [], "Notch only at (Hz)", "Notch exactly these frequencies, e.g. 50, 75, with no "
               "harmonics added (as the Analysis page). When given, Mains is not used. Empty: Mains and its "
@@ -405,9 +415,10 @@ class Epoch(Block):
               advanced=True),
         Param("every", 0.0, "Without markers: every (s)",
               "For a paradigm repeated back to back with no markers: a trial starts every this many seconds "
-              "(from 'First at'), and the markers are not used. 0: cut at the markers.", advanced=True),
+              "(from 'First at'), and the markers are not used. 0: cut at the markers.", advanced=True,
+              when=applies_when(source=compute.EVENTS, event_length=False)),
         Param("first", 0.0, "First at (s)", "Where the first trial starts, when trials repeat without markers.",
-              advanced=True),
+              advanced=True, when=applies_when(source=compute.EVENTS, event_length=False)),
         Param("motion_limit", 0.0, "Reject motion above", "Leave out a trial whose accelerometer (LiveAmp, Unicorn) "
               "swings more than this, peak to peak on any axis, in the sensor's unit (mg). 0: off.", advanced=True),
         Param("source", compute.EVENTS, "Trials from", "events: around each event (or every so many seconds "
@@ -417,13 +428,15 @@ class Epoch(Block):
               choices=compute.TRIAL_SOURCES),
         Param("event_length", False, "Each event's length", "Trials from events: each event of non-zero length "
               "from its onset to its end, used for To − From s; events without a length make no trial.",
-              advanced=True),
+              advanced=True, when=applies_when(source=compute.EVENTS)),
         Param("trials", [], "Trial table", "Trials from manual: id | condition | start-end s | out (when left "
-              "out of the selection), one per entry.", advanced=True),
+              "out of the selection), one per entry.", advanced=True, when=applies_when(source=compute.MANUAL)),
         Param("sequence", "", "Sequence", "Trials from sequence: Condition:seconds; ... e.g. Eyes open:30; Eyes "
-              "closed:30.", advanced=True),
-        Param("sequence_start", 0.0, "Sequence starts at (s)", advanced=True),
-        Param("repeats", 1, "Repeats", "How many times the sequence is repeated.", advanced=True),
+              "closed:30.", advanced=True, when=applies_when(source=compute.SEQUENCE)),
+        Param("sequence_start", 0.0, "Sequence starts at (s)", advanced=True,
+              when=applies_when(source=compute.SEQUENCE)),
+        Param("repeats", 1, "Repeats", "How many times the sequence is repeated.", advanced=True,
+              when=applies_when(source=compute.SEQUENCE)),
         Param("quality_mad", 6.0, "Review above (MAD)", "Trials from manual, sequence or Each event's length: one "
               "whose peak-to-peak is beyond the median plus this many median absolute deviations is marked for "
               "review in the trial table (five trials or more), and so is a flat channel. A mark never leaves a "
@@ -632,8 +645,9 @@ class FilterBank(Block):
         Param("design", "chebyshev2", "Design", "Chebyshev II, as Ang et al. (2012): flat pass band, the "
               "cut-offs where the stop-band attenuation is reached.", choices=fl.IIR, advanced=True),
         Param("order", 4, "Order", advanced=True),
-        Param("attenuation", 40.0, "Stop-band attenuation (dB)", "Chebyshev II and elliptic.", advanced=True),
-        Param("ripple", 1.0, "Pass-band ripple (dB)", "Chebyshev I and elliptic.", advanced=True),
+        Param("attenuation", 40.0, "Stop-band attenuation (dB)", "Chebyshev II and elliptic.", advanced=True,
+              when=ATTENUATION),
+        Param("ripple", 1.0, "Pass-band ripple (dB)", "Chebyshev I and elliptic.", advanced=True, when=RIPPLE),
     )
 
     def run(self, inputs, params, context):
@@ -858,12 +872,14 @@ class TimeFrequency(Block):
         Param("conditions", [], "Conditions", "Empty: every event label."),
         Param("tmin", -1.0, "From (s)", "From a recording only: trials keep their own span."),
         Param("tmax", 4.0, "To (s)", "From a recording only: trials keep their own span."),
-        Param("baseline", [-1.0, 0.0], "Baseline (s)"), Param("active", [0.5, 2.5], "Active window (s)"),
+        Param("baseline", [-1.0, 0.0], "Baseline (s)", when=applies_when(baseline_mode=ep.WINDOW)),
+        Param("active", [0.5, 2.5], "Active window (s)"),
         Param("method", ep.STFT, "Method", "stft: one window for every frequency. morlet: MNE's Morlet wavelets. "
               "cwt: complex Morlet scalogram (pywt's cmor1.5-1.0), {} frequencies from Lowest to Highest, as "
               "the lab scripts draw it.".format(ep.CWT_FREQS), choices=(ep.STFT, ep.MORLET, ep.CWT)),
         Param("fmin", 4.0, "Lowest (Hz)", advanced=True), Param("fmax", 40.0, "Highest (Hz)", advanced=True),
-        Param("window", 0.5, "STFT window (s)", advanced=True), Param("overlap", 0.9, "Overlap", advanced=True),
+        Param("window", 0.5, "STFT window (s)", advanced=True, when=applies_when(method=ep.STFT)),
+        Param("overlap", 0.9, "Overlap", advanced=True, when=applies_when(method=ep.STFT)),
         Param("smooth", 0.5, "Smoothing (s)", "Power smoothed over this long in time, per trial, before ERD. "
               "0: none, so one trial's amplitude is its raw |STFT|.", advanced=True),
         Param("bands", [["mu", 8.0, 13.0], ["beta", 13.0, 30.0]], "Bands", advanced=True),
@@ -873,14 +889,15 @@ class TimeFrequency(Block):
               "the mean power of a reference condition (eyes open for eyes closed).",
               choices=(ep.WINDOW, ep.CONDITION), advanced=True),
         Param("reference", "", "Reference condition", "For Reference = condition. Empty: the first condition of "
-              "the trials (as the Analysis page chose it).", advanced=True),
+              "the trials (as the Analysis page chose it).", advanced=True,
+              when=applies_when(baseline_mode=ep.CONDITION)),
         Param("erd_mode", ep.POOLED, "Average", "pooled: the trials' mean power against their mean baseline "
               "(robust). mean_of_trials: each trial's % change, then averaged. Used by every map, band course "
               "and trace.", choices=(ep.POOLED, ep.MEAN_OF_TRIALS), advanced=True),
         Param("n_cycles", 0.5, "Morlet cycles per Hz", "Morlet only: cycles of each wavelet per Hz of its "
-              "frequency, kept between 2 and 12.", advanced=True),
+              "frequency, kept between 2 and 12.", advanced=True, when=applies_when(method=ep.MORLET)),
         Param("wavelet", CWT_WAVELET, "CWT wavelet", "CWT only: a complex Morlet, cmor<bandwidth>-<centre>.",
-              advanced=True),
+              advanced=True, when=applies_when(method=ep.CWT)),
         Param("reject_uv", 0.0, "Reject above (µV)", "Leave out a trial whose signal strays further than this "
               "from its mean on an analysed channel. 0: off.", advanced=True),
     )
@@ -930,10 +947,10 @@ class TimeFrequency(Block):
 def _tune_options(folds=learn.INNER_FOLDS):
     """The search's own settings, behind Options on every block that can Tune."""
     return (Param("inner_folds", folds, "Inner folds", "Tune only: folds of the cross-validation inside each "
-                  "training fold that compares the values.", advanced=True),
+                  "training fold that compares the values.", advanced=True, when=TUNED),
             Param("tune_score", learn.ACCURACY, "Tune by", "Tune only: what the search keeps the best of. "
                   "balanced accuracy: the mean recall over the conditions, fair when they have unequal trials.",
-                  choices=learn.TUNE_SCORES, advanced=True))
+                  choices=learn.TUNE_SCORES, advanced=True, when=TUNED))
 
 
 def _listed(values):
@@ -1010,9 +1027,10 @@ class TRCSPStep(_Step):
               Param("tune", True, "Tune", "Choose alpha from 1e-10 to 1e-1 by a cross-validation inside each "
                     "training fold, as the paper does."),
               Param("alpha", "1e-05", "Alpha", "Penalty on large filter weights when not tuned. 0 would be "
-                    "plain CSP.", choices=tuple("{:.0e}".format(a) for a in learn.TRCSP_ALPHAS), advanced=True),
+                    "plain CSP.", choices=tuple("{:.0e}".format(a) for a in learn.TRCSP_ALPHAS), advanced=True,
+                    when=UNTUNED),
               Param("inner_folds", 10, "Inner folds", "Folds of the search for alpha (the paper: 10).",
-                    advanced=True),
+                    advanced=True, when=TUNED),
               _tune_options()[1])
 
     def arguments(self, params):
@@ -1149,13 +1167,16 @@ class SVMStep(_Step):
     category = CLASSIFIERS
     step = "svm"
     params = (Param("kernel", "linear", "Kernel", choices=("linear", "rbf")),
-              Param("C", 1.0, "C", "Larger: fits the training trials more closely."),
+              Param("C", 1.0, "C", "Larger: fits the training trials more closely.", when=UNTUNED),
               Param("tune", False, "Tune", "Search C (and gamma for rbf) inside each training fold."),
               Param("gamma", "scale", "Gamma", "rbf only, when not tuned: the kernel's width. scale: "
-                    "1 / (features × their variance), scikit-learn's default; or a number.", advanced=True),
-              Param("C_values", list(learn.C_GRID), "C values", "Tune only: the C values searched.", advanced=True),
+                    "1 / (features × their variance), scikit-learn's default; or a number.", advanced=True,
+                    when=applies_when(kernel="rbf", tune=False)),
+              Param("C_values", list(learn.C_GRID), "C values", "Tune only: the C values searched.", advanced=True,
+                    when=TUNED),
               Param("gamma_values", [str(v) for v in learn.GAMMA_GRID], "Gamma values", "Tune with rbf only: the "
-                    "gamma values searched (scale or numbers).", advanced=True),
+                    "gamma values searched (scale or numbers).", advanced=True,
+                    when=applies_when(kernel="rbf", tune=True)),
               *_tune_options())
 
     def short(self, params):
@@ -1178,9 +1199,10 @@ class LogisticStep(_Step):
     category = CLASSIFIERS
     step = "logistic"
     params = (Param("penalty", "l2", "Penalty", "l1 keeps few features, l2 shrinks all.", choices=("l2", "l1")),
-              Param("C", 1.0, "C", "Larger: weaker penalty."),
+              Param("C", 1.0, "C", "Larger: weaker penalty.", when=UNTUNED),
               Param("tune", False, "Tune", "Search C inside each training fold."),
-              Param("C_values", list(learn.C_GRID), "C values", "Tune only: the C values searched.", advanced=True),
+              Param("C_values", list(learn.C_GRID), "C values", "Tune only: the C values searched.", advanced=True,
+                    when=TUNED),
               *_tune_options())
 
     def short(self, params):
@@ -1201,14 +1223,14 @@ class ForestStep(_Step):
     params = (Param("trees", 200, "Trees"),
               Param("tune", False, "Tune", "Search tree depth and leaf size inside each training fold."),
               Param("depth", 0, "Depth", "When not tuned: the deepest a tree grows. 0: until its leaves are pure "
-                    "(scikit-learn's default).", advanced=True),
+                    "(scikit-learn's default).", advanced=True, when=UNTUNED),
               Param("leaf", 1, "Leaf size", "When not tuned: the fewest training trials a leaf holds.",
-                    advanced=True),
+                    advanced=True, when=UNTUNED),
               Param("depth_values", ["none" if v is None else str(v) for v in learn.TREE_GRID["max_depth"]],
                     "Depth values",
-                    "Tune only: the depths searched (none: no limit).", advanced=True),
+                    "Tune only: the depths searched (none: no limit).", advanced=True, when=TUNED),
               Param("leaf_values", list(learn.TREE_GRID["min_samples_leaf"]), "Leaf size values",
-                    "Tune only: the leaf sizes searched.", advanced=True),
+                    "Tune only: the leaf sizes searched.", advanced=True, when=TUNED),
               *_tune_options())
 
     def short(self, params):
@@ -1229,10 +1251,10 @@ class KNNStep(_Step):
     title = "kNN"
     category = CLASSIFIERS
     step = "knn"
-    params = (Param("k", 5, "Neighbours"),
+    params = (Param("k", 5, "Neighbours", when=UNTUNED),
               Param("tune", False, "Tune", "Search the number of neighbours inside each training fold."),
               Param("k_values", list(learn.NEIGHBOUR_GRID), "Neighbour values", "Tune only: the numbers of "
-                    "neighbours searched.", advanced=True),
+                    "neighbours searched.", advanced=True, when=TUNED),
               *_tune_options())
 
     def short(self, params):
@@ -1277,13 +1299,15 @@ class CrossValidate(Block):
               Port("model", (MODEL,), "Model"))
     outputs = (Port("scores", (SCORES,), "Scores"),)
     params = (
-        Param("folds", 5, "Folds"),
+        Param("folds", 5, "Folds", when=applies_when(scheme=(learn.KFOLD, learn.REPEATED))),
         Param("conditions", [], "Conditions", "Which conditions to tell apart. Empty: all."),
         Param("scheme", learn.KFOLD, "Split", "k-fold: shuffled, stratified folds. repeated k-fold: the same "
               "again with other shuffles, averaged. chronological: train on the first trials, test on the "
               "last, as a BCI meets new data.", choices=learn.SCHEMES),
-        Param("repeats", 5, "Repeats", "For repeated k-fold.", advanced=True),
-        Param("train_fraction", 0.8, "Training share", "For the chronological split.", advanced=True),
+        Param("repeats", 5, "Repeats", "For repeated k-fold.", advanced=True,
+              when=applies_when(scheme=learn.REPEATED)),
+        Param("train_fraction", 0.8, "Training share", "For the chronological split.", advanced=True,
+              when=applies_when(scheme=learn.CHRONOLOGICAL)),
         Param("permutations", 0, "Permutation test", "0: off. Otherwise the whole cross-validation is run this "
               "many times again with the labels shuffled, and p is the share that scores as well (Ojala & "
               "Garriga, 2010). Stricter than the random limit, and slow: 200 shuffles take 200 runs.",

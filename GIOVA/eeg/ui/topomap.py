@@ -9,7 +9,7 @@ the nearest-neighbour rim is only there so the map is not a jagged polygon.
 """
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
+from pyqtgraph.Qt import QtCore, QtWidgets
 from scipy.interpolate import CloughTocher2DInterpolator, NearestNDInterpolator
 
 from ..core import montages as mo
@@ -69,10 +69,38 @@ class TopoGrid(pg.GraphicsLayoutWidget):
         super().__init__()
         self.setBackground(plot_background())
         self._items = []
+        # Why no map can be drawn, in words that wrap to the room there is. A LabelItem keeps one long line,
+        # centred: in a narrow view it ran off both edges and its start was lost on the left.
+        self._note = QtWidgets.QLabel(self.viewport())
+        self._note.setWordWrap(True)
+        self._note.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self._note.hide()
 
     def clear_maps(self):
         self.clear()
         self._items = []
+        self._note.hide()
+
+    @property
+    def note(self):
+        """The words shown instead of a map, "" while maps are drawn."""
+        return self._note.text() if not self._note.isHidden() else ""
+
+    def _say(self, text):
+        """Show `text` instead of a map, wrapped to the view's width; False, as `draw` returns then."""
+        self._note.setStyleSheet("color: {}; background: transparent;".format(color("subtle")))
+        self._note.setText(text)
+        self._note.show()
+        self._place_note()
+        return False
+
+    def _place_note(self):
+        self._note.setGeometry(self.viewport().rect().adjusted(12, 8, -12, -8))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if getattr(self, "_note", None) is not None:      # pyqtgraph resizes once before __init__ is done
+            self._place_note()
 
     def draw(self, names, panels, label, diverging=True, limit=None, highlight=(), columns=None, levels=None,
              colormap=None):
@@ -82,19 +110,15 @@ class TopoGrid(pg.GraphicsLayoutWidget):
         positions = mo.positions_2d(names)
         placed = [i for i, n in enumerate(names) if n in positions]
         if len(placed) < 3 or not panels:
-            text = pg.LabelItem("A scalp map needs at least three electrodes with known "
-                                "10-20 positions. Check channel names.", color=color("subtle"))
-            self.addItem(text)
-            return False
+            return self._say("A scalp map needs at least three electrodes with known 10-20 positions. "
+                             "Check channel names.")
         measured = [i for i in placed if any(np.isfinite(np.asarray(v, float)[i]) for _, v in panels)]
         if len(measured) < 3:
             # Two electrodes would be smeared over the whole head by the fill.
-            text = pg.LabelItem("A scalp map needs at least three measured electrodes; {} here{}. "
-                                "Switched-off or flat channels carry no data.".format(
-                                    len(measured), " (" + ", ".join(names[i] for i in measured) + ")"
-                                    if measured else ""), color=color("subtle"))
-            self.addItem(text)
-            return False
+            return self._say("A scalp map needs at least three measured electrodes; {} here{}. "
+                             "Switched-off or flat channels carry no data.".format(
+                                 len(measured), " (" + ", ".join(names[i] for i in measured) + ")"
+                                 if measured else ""))
         points = np.array([positions[names[i]] for i in placed])
         radius = max(1.0, float(np.linalg.norm(points, axis=1).max()) * 1.08)
         reach = None

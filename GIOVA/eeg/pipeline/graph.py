@@ -74,6 +74,20 @@ class Param:
     choices: tuple = None
     #: shown only behind the block's Options: rarely changed
     advanced: bool = False
+    #: when it applies, as `applies_when` writes it: ((other parameter, its values), ...), every one met; None:
+    #: always. One that does not apply keeps its value, in the file too: the Workbench only hides it (an STFT
+    #: window while the method is Morlet), so switching back finds it as it was.
+    when: tuple = None
+
+    def applies(self, params):
+        """Whether this parameter matters with the block's other settings as they are, `params`."""
+        return all(params.get(name) in values for name, values in self.when or ())
+
+
+def applies_when(**conditions):
+    """`Param.when` from keywords: applies_when(method="stft"), applies_when(design=("chebyshev2", "elliptic"))."""
+    return tuple((name, tuple(value) if isinstance(value, (tuple, list)) else (value,))
+                 for name, value in conditions.items())
 
 
 class Block:

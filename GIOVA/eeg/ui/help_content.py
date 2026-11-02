@@ -744,7 +744,9 @@ sheet</td></tr>
 double-click it: it is added after the selected block and wired to it</td></tr>
 <tr><td>Wire</td><td>Drag from a port on the right of a block to one on the left of the next. Colours: blue
 recording, green trials, amber spectrum, violet features, grey model, red scores</td></tr>
-<tr><td>Settings</td><td>Select the block: its settings are on the right, rare ones behind <b>Options</b></td></tr>
+<tr><td>Settings</td><td>Select the block: its settings are on the right, rare ones behind <b>Options</b>. A
+setting that means nothing with the method or design chosen (an STFT window under Morlet) is hidden; its value
+is kept for when it applies again</td></tr>
 <tr><td>Help on a block</td><td>Right-click it, <b>Help</b></td></tr>
 <tr><td>Remove</td><td>Select a block or wire, Delete</td></tr>
 <tr><td>Move around</td><td>Drag on empty sheet or scroll with two fingers; pinch or Ctrl + wheel zooms; the

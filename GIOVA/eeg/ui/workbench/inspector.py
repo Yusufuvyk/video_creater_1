@@ -1,7 +1,8 @@
 """The right-hand side of the Workbench: the selected block's settings and its result.
 
 A block's parameters become a short form. Only the ones that usually matter are
-shown; the rest wait behind Options. Lists are typed as text ("C3, Cz, C4",
+shown; the rest wait behind Options. A setting that means nothing with the others
+as they are (an STFT window while the method is Morlet) is hidden, its value kept. Lists are typed as text ("C3, Cz, C4",
 "mu 8-13, beta 13-30"); where the recording is known, Pick… offers its channel
 names or event labels so nobody has to remember how a dataset spells them.
 """
@@ -13,11 +14,11 @@ import numpy as np
 from pyqtgraph.Qt import QtCore, QtWidgets
 
 from ...pipeline import block
-from ..theme import color, error, muted, plot_background
+from ..theme import color, muted, plot_background
 from ..widgets import NoScrollComboBox, NoScrollIntBox, NoScrollSpinBox
 from .previews import EpochsPreview, PreviewWindow, _Preview, preview, short_list
 from .problems import ProblemBox
-from ..icons import only, put
+from ..icons import only
 
 #: Files the Recording block opens, for its Browse button.
 RECORDING_FILTER = ("Recordings (*.csv *.txt *.edf *.bdf *.gdf *.vhdr *.fif *.set *.mat);;All files (*)")
@@ -334,6 +335,8 @@ class Inspector(QtWidgets.QWidget):
         self.column.setContentsMargins(8, 8, 8, 8)
         self.column.setSpacing(8)
         self.body = self.result = self.error = self.result_box = self.methods = self.options_toggle = None
+        #: the forms the settings are in: the main one, and the one behind Options
+        self.basic_form = self.advanced_form = None
         self.error_title = ""
         #: result windows still open
         self.windows = []
@@ -374,7 +377,7 @@ class Inspector(QtWidgets.QWidget):
         column.setSpacing(8)
         self.column.addWidget(self.body)
         self.result = self.error = self.result_box = self.methods = self.response = self.picker = None
-        self.options_toggle = None
+        self.options_toggle = self.basic_form = self.advanced_form = None
         self.fields = {}
         if graph is None or node_id not in graph.nodes:
             hint = QtWidgets.QLabel(
@@ -430,6 +433,8 @@ class Inspector(QtWidgets.QWidget):
             self.options_toggle = toggle
             column.addWidget(toggle, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
             column.addWidget(advanced_box)
+        self.basic_form, self.advanced_form = basic, advanced
+        self._show_applicable()
         if node.type == "load" and str(params.get("path") or "").lower().endswith(".mat"):
             layout = QtWidgets.QPushButton("How this file is read…")
             layout.setToolTip("Which variable is the signal, its sampling rate, channel names and where the events "
@@ -538,6 +543,22 @@ class Inspector(QtWidgets.QWidget):
         self._update_methods()
         self.edited.emit(self.node_id)
 
+    def _show_applicable(self):
+        """Only the settings that mean something with the others as they are: an STFT's window while the method is
+        STFT, a Chebyshev's ripple for that design. A hidden one keeps its value (and the file keeps it), so
+        switching back finds it as it was. Options itself goes when nothing behind it applies."""
+        if self.graph is None or self.node_id not in self.graph.nodes or self.basic_form is None:
+            return
+        kind = block(self.graph.nodes[self.node_id].type)
+        params = self.graph.params(self.node_id)
+        for param in kind.params:
+            field = self.fields.get(param.name)
+            if field is not None:
+                form = self.advanced_form if param.advanced else self.basic_form
+                form.setRowVisible(field, param.applies(params))
+        if self.options_toggle is not None:
+            self.options_toggle.setVisible(any(p.advanced and p.applies(params) for p in kind.params))
+
     def _update_methods(self):
         """What the block does, in its first sentence and without citations; all of it on hover. The papers are
         the report's and Help's to cite (the report's Methods are this same text, references kept)."""
@@ -553,6 +574,7 @@ class Inspector(QtWidgets.QWidget):
         except ValueError as exc:
             self.show_error(str(exc))
             return
+        self._show_applicable()
         self._update_methods()
         self._update_response()
         self.edited.emit(self.node_id)
