@@ -37,10 +37,6 @@ def _is_ignored(description):
     return str(description).upper().startswith(tuple(b.upper() for b in IGNORED_LABELS))
 
 
-def is_mne_file(path):
-    return Path(path).suffix.lower() in MNE_SUFFIXES
-
-
 def is_epochs_file(path):
     name = Path(path).name.lower()
     return name.endswith("-epo.fif") or name.endswith("_epo.fif")

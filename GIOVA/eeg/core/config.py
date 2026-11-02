@@ -31,7 +31,6 @@ TIMESTAMP_ROW = BoardShim.get_timestamp_channel(BOARD)
 CH_NAMES = (list(CYTON_DAISY_1020) if N_CH == len(CYTON_DAISY_1020)
             else generic_names(N_CH))
 
-RAIL_UV = 187_500.0  # Cyton amplifier saturation
 NYQUIST = FS / 2.0
 
 BANDS = (

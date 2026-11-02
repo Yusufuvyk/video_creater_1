@@ -5,7 +5,6 @@ its own recordings folder - in a separate process. Only its board class is
 replaced, so the Monitor keeps the board and the signal stays visible while
 the game is played.
 """
-import os
 from pathlib import Path
 import sys
 

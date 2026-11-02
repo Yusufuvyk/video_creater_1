@@ -6,7 +6,6 @@ whatever it passed over, silently re-running the analysis with settings nobody
 chose.
 """
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
-from .theme import muted
 
 
 class NoScrollSpinBox(QtWidgets.QDoubleSpinBox):
@@ -333,47 +332,6 @@ def group(*widgets, spacing=4):
     for widget in widgets:
         row.addWidget(widget)
     return box
-
-
-class Section(QtWidgets.QWidget):
-    """A collapsible block: '▸ Title   one-line summary', content hidden until opened.
-
-    Settings most people never change stay out of sight, but the summary still
-    says what they are, so nothing is hidden that affects a result.
-    """
-
-    def __init__(self, title, content, expanded=False):
-        super().__init__()
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        self.header = QtWidgets.QToolButton()
-        self.header.setCheckable(True)
-        self.header.setChecked(expanded)
-        self.header.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.header.setAutoRaise(True)
-        self.header.setStyleSheet("QToolButton { font-weight: 600; border: none; text-align: left; }")
-        self.header.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
-        self.title = title
-        self.summary = QtWidgets.QLabel()
-        self.summary.setWordWrap(True)
-        self.summary.setStyleSheet(muted() + " padding-left: 18px;")
-        self.content = content
-        layout.addWidget(self.header)
-        layout.addWidget(self.summary)
-        layout.addWidget(content)
-        self.header.toggled.connect(self._sync)
-        self._sync(expanded)
-
-    def _sync(self, expanded):
-        self.header.setArrowType(QtCore.Qt.ArrowType.DownArrow if expanded else QtCore.Qt.ArrowType.RightArrow)
-        self.header.setText(self.title)
-        self.content.setVisible(expanded)
-        self.summary.setVisible(not expanded and bool(self.summary.text()))
-
-    def set_summary(self, text):
-        self.summary.setText(text)
-        self.summary.setVisible(not self.header.isChecked() and bool(text))
 
 
 class BusyTrace(QtWidgets.QWidget):

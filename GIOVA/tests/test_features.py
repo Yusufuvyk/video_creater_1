@@ -19,7 +19,6 @@ from eeg.core.trials import Trial, Settings, analyze
 from eeg.core.sources import Recording, FileSource, load_brainflow_csv
 from eeg.core.processing import filter_finite, StreamFilter, design_filter, AutoScaler
 from eeg.core import epochs as ep
-from eeg.core import analysis as an
 from eeg.formats.trial_analysis import save_session, load_session, export_csv
 from eeg.formats.matfile import parse_rows, MatError
 from eeg.ui.playback import Player
@@ -182,10 +181,14 @@ class FeatureMathTests(unittest.TestCase):
         self.assertTrue(result.quality["5"])
 
     def test_stft_density_matches_welch_and_trial_boundaries(self):
-        tf = an.stft_tfr(self.x, self.fs)
+        whole = ep.EpochSettings(tmin=0, tmax=10, baseline=[0, 1], active=[1, 3], fmin=1, fmax=45, window=2,
+                                 overlap=.5, smooth=0, topography=False)
+        freqs, _, power, units = ep.stft_power(self.x[None, :], self.fs, whole)
         f, p = welch_psd(self.x, self.fs)
         keep = (f >= 1) & (f <= 45)
-        np.testing.assert_allclose(tf.power.mean(axis=1), p[keep], atol=1e-12)
+        np.testing.assert_allclose(freqs, f[keep])
+        np.testing.assert_allclose(power[0].mean(axis=1), p[keep], atol=1e-12)    # Welch is the mean of frames
+        self.assertEqual(units, "µV²/Hz")
         events = ep.EventTable([0.0], None, ["open"])
         settings = ep.EpochSettings(tmin=0, tmax=4, baseline=[0, 1], active=[1, 3], fmin=1, fmax=45, window=1,
                                     overlap=.5, smooth=0, topography=False, bands=[["alpha", 8, 13]])
@@ -206,8 +209,6 @@ class FeatureMathTests(unittest.TestCase):
                                    ep.EpochSettings(tmin=0, tmax=4, baseline=[0, 1], active=[1, 3], method="morlet",
                                                     topography=False))
         self.assertEqual(result.tf[0].units, "µV²")
-        with self.assertRaises(ValueError):
-            an.band_powers(an.morlet_tfr(self.x, self.fs))
 
     def test_erd_band_trace_uses_band_power_ratio(self):
         x = np.sin(2*np.pi*10*np.arange(1000)/125)

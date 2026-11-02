@@ -564,9 +564,6 @@ class ResizableSide(QtWidgets.QSplitter):
                 handle.setEnabled(False)
                 handle.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
 
-    def width_of(self, name):
-        return next((w.width() for w, (n, _) in self._sides.items() if n == name), None)
-
     def _width(self, widget):
         """A side's width: what was dragged, or its strip while it is folded away."""
         folded = getattr(widget, "collapsed", False)

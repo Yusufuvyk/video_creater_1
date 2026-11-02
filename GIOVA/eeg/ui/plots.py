@@ -61,11 +61,6 @@ def set_trace_width(width):
     return TRACE_WIDTH
 
 
-#: Fixed width for every left axis that has to line up with another plot.
-#: Without this, "uV" and "Hz" tick labels reserve different margins and two
-#: plots showing the same time range still start at different pixels.
-AXIS_LEFT_WIDTH = 62
-
 #: Fixed width for an image grid's colour bar, so the space it takes is
 #: predictable and a neighbouring plot can reserve the same amount.
 COLORBAR_WIDTH = 90
@@ -181,26 +176,6 @@ class ZoomControls(QtWidgets.QWidget):
 
     def apply(self, *args):
         set_zoom(self.target, self.zoom.isChecked())
-
-
-def pin_left_axis(plot_item):
-    """Give a plot the shared left-axis width so time axes align."""
-    plot_item.getAxis("left").setWidth(AXIS_LEFT_WIDTH)
-
-
-def robust_range(values, percentile=99.5, floor=1.0):
-    """Symmetric y limits that ignore a few extreme samples.
-
-    A recording usually opens with a huge settling transient. Fitting the axis
-    to it flattens every real waveform, so clip to a high percentile instead of
-    the true maximum.
-    """
-    finite = values[np.isfinite(values)]
-    if finite.size == 0:
-        return -floor, floor
-    limit = float(np.percentile(np.abs(finite), percentile))
-    limit = max(limit, floor)
-    return -limit, limit
 
 
 class RowCurve(pg.PlotCurveItem):
@@ -731,158 +706,6 @@ class MultiCurveView(pg.PlotWidget):
             self.addItem(self._zero)
         if self._zero is not None:
             self._zero.setVisible(zero_line)
-
-
-class GroupedBarsView(pg.PlotWidget):
-    """Band powers as grouped bars, one group per band, one bar per channel."""
-
-    def __init__(self):
-        super().__init__()
-        self.showGrid(y=True, alpha=0.2)
-        self.setMouseEnabled(x=False, y=False)
-        self._legend = self.addLegend(offset=(-10, 10))
-        self._bars = []
-
-    #: A bar of exactly zero has no height on a log axis and no bottom either;
-    #: this stands in for "too small to see" without breaking the drawing.
-    LOG_FLOOR = 1e-9
-
-    def draw(self, series, categories, units="", log_y=False):
-        """`series` is [(label, values, colour_index)], one entry per channel."""
-        for item in self._bars:
-            self.removeItem(item)
-        self._bars = []
-        self._legend.clear()
-        if not series:
-            return
-
-        self.setLogMode(x=False, y=log_y)
-        width = 0.8 / len(series)
-        for slot, (label, values, index) in enumerate(series):
-            heights = ([max(float(v), self.LOG_FLOOR) for v in values] if log_y
-                       else list(values))
-            # Shift each channel within its group so bars sit side by side.
-            offset = -0.4 + width * (slot + 0.5)
-            bars = pg.BarGraphItem(
-                x=[i + offset for i in range(len(categories))],
-                height=heights, width=width * 0.9,
-                brush=CHANNEL_COLORS[index % len(CHANNEL_COLORS)])
-            self.addItem(bars)
-            self._bars.append(bars)
-            self._legend.addItem(bars, label)
-
-        self.getAxis("bottom").setTicks([list(enumerate(categories))])
-        self.setLabel("left", "{} (log)".format(units) if log_y else units)
-        self.setXRange(-0.6, len(categories) - 0.4, padding=0)
-
-
-class ImageGridView(pg.GraphicsLayoutWidget):
-    """One small image per channel, all sharing a single colour scale.
-
-    Rebuilt on every draw. That is wasteful per frame but this view is only
-    produced on demand, and it keeps the panel set exactly in step with the
-    channel selection.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._colorbar = None
-        self._plots = []
-        self._trace_plot = None
-        self._mouse_enabled = False
-
-    def clear_panels(self):
-        """Forget everything drawn. A view that failed must not leave the
-        previous one on screen: the settings beside it now describe something
-        else, and the picture is the more believable of the two."""
-        self.clear()
-        self._colorbar = None
-        self._plots = []
-        self._trace_plot = None
-
-    def set_mouse_enabled(self, enabled):
-        self._mouse_enabled = enabled
-        for plot in self._plots + ([self._trace_plot] if self._trace_plot else []):
-            plot.setMouseEnabled(x=enabled, y=enabled)
-
-    #: Height reserved for the signal trace drawn above the panels.
-    TRACE_HEIGHT = 130
-
-    def draw(self, panels, x_span, y_range, label, diverging=False, trace=None):
-        """`panels` is [(title, values)] with values shaped (n_y, n_x).
-
-        `trace` is an optional (curves, y_range, title) drawn as a full-width
-        row above the panels, where curves is [(x, y, pen)]. It lives inside
-        this same layout on purpose: a trace in a separate widget can never be
-        made to line up reliably, because the two have independent geometry.
-        """
-        self.clear()
-        self._colorbar = None
-        self._plots = []
-        self._trace_plot = None
-        if not panels:
-            return
-
-        stacked = np.concatenate([np.asarray(v).ravel() for _, v in panels])
-        if diverging:
-            limit = float(np.nanpercentile(np.abs(stacked), 98)) or 1.0
-            levels = (-limit, limit)
-            colormap = pg.colormap.get("CET-D1A")
-        else:
-            low = float(np.nanpercentile(stacked, 5))
-            high = float(np.nanpercentile(stacked, 99))
-            levels = (low, high if high > low else low + 1.0)
-            colormap = pg.colormap.get("viridis")
-
-        # One column, always. Side-by-side panels would each be a fraction of
-        # the width and could never line up with the trace above them, which is
-        # the whole point of showing a time axis.
-        columns = 1
-        first_row = 0
-        if trace is not None:
-            curves, trace_range, trace_title = trace
-            strip = self.addPlot(row=0, col=0, title=trace_title)
-            value_axis(strip, "Signal", "µV")
-            strip.showGrid(x=True, y=True, alpha=0.2)
-            strip.setMouseEnabled(x=self._mouse_enabled, y=self._mouse_enabled)
-            strip.setMaximumHeight(self.TRACE_HEIGHT)
-            pin_left_axis(strip)
-            for x, y, pen in curves:
-                strip.plot(x, y, pen=pen)
-            strip.setXRange(*x_span, padding=0)
-            strip.setYRange(*trace_range, padding=0.05)
-            strip.getAxis("bottom").setStyle(showValues=False)
-            self._trace_plot = strip
-            first_row = 1
-
-        images = []
-        for i, (title, values) in enumerate(panels):
-            plot = self.addPlot(row=first_row + i, col=0, title=title)
-            plot.setLabel("bottom", "Time", units="s")
-            plot.setLabel("left", "Hz")
-            image = pg.ImageItem()
-            image.setImage(np.asarray(values).T, autoLevels=False)
-            image.setRect(QtCore.QRectF(
-                x_span[0], y_range[0],
-                x_span[1] - x_span[0], y_range[1] - y_range[0]))
-            plot.addItem(image)
-            plot.setXRange(*x_span, padding=0)
-            plot.setYRange(*y_range, padding=0)
-            plot.setMouseEnabled(x=self._mouse_enabled, y=self._mouse_enabled)
-            pin_left_axis(plot)
-            images.append(image)
-            self._plots.append(plot)
-
-        rows = len(panels) + first_row
-        self._colorbar = pg.ColorBarItem(colorMap=colormap, values=levels,
-                                         label=label)
-        self._colorbar.setImageItem(images)
-        # Pin the width. Left to itself the bar takes a share of the row, which
-        # both shrinks the images and makes the space a neighbouring plot has to
-        # match unpredictable.
-        for setter in ("setMinimumWidth", "setPreferredWidth", "setMaximumWidth"):
-            getattr(self._colorbar, setter)(COLORBAR_WIDTH)
-        self.addItem(self._colorbar, row=0, col=columns, rowspan=max(rows, 1))
 
 
 def _fmt(value):

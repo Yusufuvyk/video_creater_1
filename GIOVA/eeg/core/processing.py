@@ -1,4 +1,4 @@
-"""Filtering, electrode quality, and display auto-scaling.
+"""Filtering, display decimation and auto-scaling, and live spectra.
 
 Pure numpy/scipy - no Qt here, so this is the part that is easy to test.
 """
@@ -8,7 +8,7 @@ import time
 import numpy as np
 from scipy.signal import butter, iirnotch, sosfilt, sosfilt_zi, sosfiltfilt, tf2sos
 
-from .config import BANDS, RAIL_UV
+from .config import BANDS
 from .spectral import welch_psd, band_integral
 
 # ----------------------------------------------------------------------
@@ -178,66 +178,6 @@ def decimate_minmax(block, bins, return_indices=False):
 def mains_harmonics(base, fs):
     """Mains frequency and the harmonics that fit below Nyquist."""
     return [base * k for k in (1, 2, 3) if base * k < fs / 2.0]
-
-
-# ----------------------------------------------------------------------
-# electrode quality
-# ----------------------------------------------------------------------
-
-
-class Quality:
-    """Verdict for one electrode."""
-
-    __slots__ = ("verdict", "railed", "std")
-
-    def __init__(self, verdict, railed, std):
-        self.verdict = verdict
-        self.railed = railed
-        self.std = std
-
-    @property
-    def is_good(self):
-        return self.verdict == "ok"
-
-    @property
-    def label(self):
-        if self.verdict == "railed":
-            return "railed {:.0%}".format(self.railed)
-        return self.verdict
-
-
-def assess_channels(raw_uv, rail_uv=RAIL_UV):
-    """Classify each electrode from UNFILTERED microvolts.
-
-    Filtering hides the problem - a railed channel is pinned to the rail, so
-    after a bandpass it looks like a quiet flat line rather than a broken one.
-
-    `rail_uv` is the amplifier's saturation level and is specific to the
-    hardware. Pass None for recordings from another system, where a Cyton
-    threshold would flag perfectly good channels.
-    """
-    results = []
-    scale = np.nanmedian([np.nanstd(x) for x in raw_uv]) if len(raw_uv) else 0.0
-    for x in raw_uv:
-        railed = (float(np.mean(np.abs(x) > rail_uv * 0.95))
-                  if rail_uv else 0.0)
-        std = float(np.nanstd(x))
-        # railed is checked first: an electrode pinned hard at the rail has
-        # no variance either, and calling that "dead" hides the real cause
-        if not np.isfinite(x).all():
-            verdict = "missing samples"
-        elif railed > 0.15:
-            verdict = "railed"
-        elif std < 1e-6:
-            verdict = "dead"
-        elif scale > 0 and std > 20 * scale:
-            # Relative to the other channels, so it works whatever the
-            # recording's units and amplitude happen to be.
-            verdict = "noisy"
-        else:
-            verdict = "ok"
-        results.append(Quality(verdict, railed, std))
-    return results
 
 
 # ----------------------------------------------------------------------

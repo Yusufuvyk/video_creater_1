@@ -30,7 +30,6 @@ import numpy as np
 from scipy.signal import get_window, spectrogram
 from scipy.stats import ttest_ind
 
-from .analysis import smooth_power
 from .processing import filter_finite
 from .spectral import sample_index, welch_psd
 from .trials import Settings, design_kwargs, reference_signal, validate_settings
@@ -352,6 +351,27 @@ class EpochResult:
 def _percent(power, reference):
     reference = np.where(reference > 0, reference, np.nan)
     return 100.0 * (power - reference) / reference
+
+
+def smooth_power(power, step, smooth_seconds):
+    """Smooth power along time, within the block it is given and no further.
+
+    Square first, then smooth - the other order averages the waveform rather
+    than its envelope, and an oscillation averages to nothing.
+
+    The caller decides what "the block" is, and for epochs that must be one
+    epoch at a time. Smoothing the whole continuous recording instead lets an
+    epoch's first column borrow from the end of the previous trial, and on
+    Cho2017 that inflated the 0.5-1.5 s baseline enough to read -68% where the
+    honest answer is -51%.
+    """
+    if not smooth_seconds or step <= 0 or power.shape[-1] < 2:
+        return power
+    width = max(int(round(smooth_seconds / step)), 1)
+    if width <= 1:
+        return power
+    from scipy.ndimage import uniform_filter1d
+    return uniform_filter1d(power, size=width, axis=-1, mode="nearest")
 
 
 def _frames(times, window):

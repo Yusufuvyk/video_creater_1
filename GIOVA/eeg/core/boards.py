@@ -101,13 +101,6 @@ def csv_board(board_id):
     raise ValueError("Unsupported recording device: {}".format(board_id))
 
 
-def by_key(key):
-    for board in BOARDS:
-        if board.key == key:
-            return board
-    return CYTON_DAISY
-
-
 def for_csv_columns(n_columns):
     """The board that wrote a BrainFlow CSV with this many columns.
 

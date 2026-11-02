@@ -227,15 +227,6 @@ class FeatureView(QtWidgets.QWidget):
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
 
-    def set_profile(self, profile):
-        """Adopt a feature profile chosen elsewhere (an analysis profile)."""
-        self.profile = profile
-        index = 0 if profile == FeatureProfile() else 1 if profile == band_power_profile() else 2
-        self.presets.blockSignals(True)
-        self.presets.setCurrentIndex(index)
-        self.presets.blockSignals(False)
-        self.profile_changed.emit(self.profile)
-
     def _preset(self, index):
         if index < 2:
             self.profile = FeatureProfile() if index == 0 else band_power_profile()

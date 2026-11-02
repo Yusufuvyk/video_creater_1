@@ -404,31 +404,3 @@ class ControlPanel(QtWidgets.QWidget):
     @property
     def filter_kwargs(self):
         return self.filters.kwargs
-
-    def show_amplitude(self, value):
-        """Reflect an auto-computed amplitude back into the (disabled) box."""
-        if self.auto_amplitude.isChecked():
-            self.amplitude.blockSignals(True)
-            self.amplitude.setValue(value)
-            self.amplitude.blockSignals(False)
-
-    def mark_channels(self, quality):
-        """Flag bad electrodes, drop them from the selection, name them."""
-        bad, usable = [], []
-        for i, info in enumerate(quality[:len(self.channel_names)]):
-            if info.is_good:
-                usable.append((info.std, i))
-            else:
-                bad.append(i)
-
-        good = [i for i, info in enumerate(quality[:len(self.channel_names)])
-                if info.is_good]
-        self.channel_button.set_channels(
-            self.channel_names, (good or [0])[:MAX_DEFAULT_TRACES], bad)
-        names = [self.channel_names[i] for i in bad]
-        self.bad_label.setText(
-            "bad: " + ", ".join(names) if names else "all electrodes usable")
-
-        if usable:  # point the spectrum at the liveliest good channel
-            self.psd_channel.setCurrentIndex(max(usable)[1])
-        return names

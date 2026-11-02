@@ -24,7 +24,7 @@ import numpy as np
 
 from ..core.config import DATA_DIR
 from ..core.montages import BNCI2014_001_EEG
-from .matfile import EVERY, SAMPLES_1, Mapping, channels_of, runs
+from .matfile import SAMPLES_1, Mapping, channels_of, runs
 
 SUFFIX = ".layout.json"
 
@@ -139,7 +139,3 @@ def every(root=None):
 def matching(variables, root=None):
     """The first layout that fits a file's variables, or None."""
     return next((layout for layout in every(root) if layout.fits(variables)), None)
-
-
-def is_runs(key):
-    return EVERY in str(key)
