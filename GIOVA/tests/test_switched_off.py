@@ -121,8 +121,7 @@ class AnalysisTests(unittest.TestCase):
 
     def test_two_measured_electrodes_are_not_painted_over_the_head(self):
         preview = self.head_map(self.open(game_recording(self.directory)), ["O1", "O2"])
-        labels = [item.text for item in preview.head.items() if hasattr(item, "text") and isinstance(item.text, str)]
-        self.assertTrue(any("at least three measured electrodes" in text for text in labels), labels)
+        self.assertIn("at least three measured electrodes", preview.head.note)     # said instead of a map
         self.assertIn("left out: ", preview.caption.text())
 
     def test_brain_map_uses_only_the_measured_electrodes(self):
