@@ -910,7 +910,12 @@ few; quick blocks before it say nothing of how long a cross-validation takes. <i
 follow.</p>
 <h3>Time-frequency</h3>
 <p>ERD / ERS per electrode: the band's power (its frequencies averaged), the trials' power averaged, then
-100 × (power − baseline) / baseline. Amplitude: a sine of amplitude A reads A (half of what scipy's STFT
+100 × (power − baseline) / baseline. The <b>head map</b> of the active window and the <b>statistics</b> are window
+means of a separate STFT of each electrode (the block's STFT window, at most 50 % overlap, not smoothed), whatever
+the method of the maps: one transform across the scalp, and fast on 64 electrodes. With the method STFT, at most
+50 % overlap and no smoothing, that is the maps' own transform. <b>Head maps over time</b> are drawn from the maps
+themselves, on the analysed channels. Every head map places the electrodes at the standard 10-05 positions of
+their names (MNE's template), not at positions measured on the person's head. Amplitude: a sine of amplitude A reads A (half of what scipy's STFT
 gives). <b>wavelet</b>: complex Morlet wavelets. Their width is given in one of two ways: <i>cycles per Hz</i>
 (each wavelet spans that many cycles per Hz of its frequency, 2 to 12 cycles, about 40 frequencies), or
 <i>one wavelet</i> cmorB-C as PyWavelets names it, the same for every frequency (128 frequencies, computed from

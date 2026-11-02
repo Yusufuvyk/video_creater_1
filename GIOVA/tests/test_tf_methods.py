@@ -1,6 +1,7 @@
 """Time-frequency methods: STFT, and complex Morlet wavelets whose width is given as cycles per Hz or as one
 wavelet cmorB-C. Morlet and CWT were offered as two methods; they are one transform, and pipelines saved with
-those names open as the wavelet method and give the same numbers.
+those names open as the wavelet method and give the same numbers. And what the head map says about itself: which
+transform its window means come from, how many electrodes it was drawn from, and whose positions they are.
 
 Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
@@ -92,6 +93,43 @@ class SameNumbersTests(unittest.TestCase):
             mne_power = power[0, 0] * (2.0 / gain ** 2)[:, None]
             inner = slice(int(1.5 * fs), int(6.5 * fs))                     # away from the ends
             np.testing.assert_allclose(cwt[:, inner], mne_power[:, inner], rtol=1e-3, atol=1e-3)
+
+
+class HeadMapTextTests(unittest.TestCase):
+    """The head map and the statistics are window means of a separate STFT, from every electrode with Scalp map
+    on, at template positions: said where they are shown and in the methods."""
+
+    def test_the_methods_name_the_transform_of_the_window_means(self):
+        kind = block("erd")
+        sentence = kind.describe({**kind.defaults(), "method": ep.WAVELET, "window": 0.5, "overlap": 0.9,
+                                  "topography": True})
+        self.assertIn("separate STFT of every electrode (0.5 s Hann window, 50% overlap, not smoothed)", sentence)
+        same = kind.describe({**kind.defaults(), "method": ep.STFT, "overlap": 0.5, "smooth": 0.0})
+        self.assertIn("window means of the same STFT, on each analysed channel", same)
+
+    def test_the_head_map_counts_the_electrodes_it_is_drawn_from(self):
+        from pyqtgraph.Qt import QtWidgets
+        from eeg.core.montages import TEN_TWENTY_19
+        from eeg.ui.workbench.previews import HEAD_VIEW, STATS_VIEW, TFPreview
+        QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        rng = np.random.default_rng(5)
+        fs, trials, seconds = 128.0, 6, 4.0
+        data = rng.normal(0, 5, (len(TEN_TWENTY_19), int(trials * seconds * fs)))
+        events = ep.EventTable(np.arange(trials) * seconds + 0.5, None, ["A"] * trials)
+        raw = Recording(data, fs, list(TEN_TWENTY_19), events=events)
+        result = compute.time_frequency(raw, **{**COMMON, "channels": ["C3", "Cz", "C4"]}, method=ep.WAVELET,
+                                        topography=True)
+        preview = TFPreview(result)
+        self.addCleanup(preview.close)
+        preview.view_box.setCurrentText(HEAD_VIEW)
+        caption = preview.caption.text()
+        self.assertNotIn("Only 3 channels", caption)                 # the map has all 19, not the 3 in detail
+        self.assertIn("every electrode computed (19)", caption)
+        self.assertIn("separate STFT of every electrode", caption)
+        self.assertIn(ep.TEMPLATE_POSITIONS, caption)
+        self.assertEqual(preview.head.toolTip(), ep.TEMPLATE_POSITIONS)
+        preview.view_box.setCurrentText(STATS_VIEW)
+        self.assertIn("separate STFT", preview.caption.text())
 
 
 if __name__ == "__main__":

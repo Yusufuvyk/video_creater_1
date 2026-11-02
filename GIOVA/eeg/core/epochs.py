@@ -466,6 +466,32 @@ def padded_trials(x, starts, n, reach):
     return out
 
 
+def window_mean_settings(settings):
+    """The transform every electrode's window means (the head map, the statistics) come from, whatever the method
+    of the detail maps: an STFT with the same window, at most 50 % overlap and no smoothing, because only means
+    over the baseline and active windows are taken. One method across the scalp, and a band ratio does not depend
+    on the PSD-vs-power unit difference."""
+    return EpochSettings(**{**settings.to_dict(), "method": STFT, "overlap": min(settings.overlap, 0.5),
+                            "smooth": 0.0})
+
+
+def window_means_text(settings, topography=None):
+    """Where the window means come from, in words: one sentence for the methods, the captions and Help."""
+    stft = window_mean_settings(settings)
+    where = "every electrode" if (settings.topography if topography is None else topography) else \
+        "each analysed channel"
+    same = settings.method == STFT and stft.overlap == settings.overlap and not settings.smooth
+    if same:
+        return "The head map and the statistics are window means of the same STFT, on {}.".format(where)
+    return ("The head map and the statistics are window means of a separate STFT of {} ({:g} s Hann window, "
+            "{:.0%} overlap, not smoothed), whatever the method of the maps.".format(where, stft.window, stft.overlap))
+
+
+#: How the head maps place the electrodes: by name, on a template, never on this head's measured positions.
+TEMPLATE_POSITIONS = ("Electrodes are drawn at the standard 10-05 positions of their names (MNE's template), "
+                      "not at positions measured on this head.")
+
+
 def _band_rows(freqs, low, high):
     rows = (freqs >= low) & (freqs <= high)
     if not rows.any():
@@ -574,12 +600,7 @@ def compute_epochs(data, fs, names, channels, events, settings, progress=None, i
         psd[cond] = (spectra.mean(axis=0),
                      spectra.std(axis=0, ddof=1) / np.sqrt(k) if k > 1 else np.zeros(spectra.shape[1:]))
 
-    # Window-mean ERD (topography and statistics) uses one STFT for every electrode,
-    # whatever the detail method: 50% overlap and no smoothing, because only means
-    # over the baseline and active windows are taken. One method across the scalp,
-    # and a band ratio does not depend on the PSD-vs-power unit difference.
-    stft_settings = EpochSettings(**{**settings.to_dict(), "method": STFT,
-                                     "overlap": min(settings.overlap, 0.5), "smooth": 0.0})
+    stft_settings = window_mean_settings(settings)
 
     def decompose(x, cond, method_settings, amplitudes=None):
         reach = wavelet_reach(fs, method_settings)

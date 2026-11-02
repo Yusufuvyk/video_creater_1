@@ -68,12 +68,13 @@ class InspectorTests(unittest.TestCase):
     def test_time_frequency_shows_the_settings_of_its_method_only(self):
         node = self.graph.add("erd")
         self.inspector.show_node(self.graph, node)
+        # the STFT's window and overlap stay with every method: the head map and the statistics use them
         method_settings = {"window", "overlap", "width", "n_cycles", "wavelet"}
         self.assertEqual(self.shown() & method_settings, {"window", "overlap"})
         self.inspector.set_value(node, "method", ep.WAVELET)
-        self.assertEqual(self.shown() & method_settings, {"width", "n_cycles"})            # cycles per Hz
+        self.assertEqual(self.shown() & method_settings, {"window", "overlap", "width", "n_cycles"})  # per Hz
         self.inspector.set_value(node, "width", ep.FIXED)
-        self.assertEqual(self.shown() & method_settings, {"width", "wavelet"})             # one cmorB-C
+        self.assertEqual(self.shown() & method_settings, {"window", "overlap", "width", "wavelet"})  # cmorB-C
         self.assertIn("baseline", self.shown())
         self.assertNotIn("reference", self.shown())
         self.inspector.set_value(node, "baseline_mode", ep.CONDITION)

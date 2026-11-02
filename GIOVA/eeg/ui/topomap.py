@@ -4,7 +4,8 @@ MNE draws these with matplotlib, which the packaged app leaves out, so this is
 a small pyqtgraph version: the same azimuthal layout as the channel head map
 (`montages.positions_2d`), Clough-Tocher interpolation inside the electrodes'
 convex hull, nearest-electrode fill out to the head outline, and nothing drawn
-outside the head. Values are never invented beyond what the electrodes carry;
+outside the head. Electrodes sit at the standard 10-05 positions of their names
+(MNE's template), never at positions measured on the person's head. Values are never invented beyond what the electrodes carry;
 the nearest-neighbour rim is only there so the map is not a jagged polygon.
 """
 import numpy as np
@@ -13,6 +14,7 @@ from pyqtgraph.Qt import QtCore, QtWidgets
 from scipy.interpolate import CloughTocher2DInterpolator, NearestNDInterpolator
 
 from ..core import montages as mo
+from ..core.epochs import TEMPLATE_POSITIONS
 from .plots import COLORBAR_WIDTH, erd_colormap
 from .theme import color, plot_background
 
@@ -68,6 +70,7 @@ class TopoGrid(pg.GraphicsLayoutWidget):
     def __init__(self):
         super().__init__()
         self.setBackground(plot_background())
+        self.setToolTip(TEMPLATE_POSITIONS)
         self._items = []
         # Why no map can be drawn, in words that wrap to the room there is. A LabelItem keeps one long line,
         # centred: in a narrow view it ran off both edges and its start was lost on the left.

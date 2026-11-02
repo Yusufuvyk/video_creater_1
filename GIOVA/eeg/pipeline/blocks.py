@@ -893,8 +893,11 @@ class TimeFrequency(Block):
               "2πC√(B/2): cmor1.5-1.0 spans 5.44 cycles; a larger B or C, more cycles (sharper in frequency, "
               "blurrier in time).", when=applies_when(method=ep.WAVELET, width=ep.FIXED)),
         Param("fmin", 4.0, "Lowest (Hz)", advanced=True), Param("fmax", 40.0, "Highest (Hz)", advanced=True),
-        Param("window", 0.5, "STFT window (s)", advanced=True, when=applies_when(method=ep.STFT)),
-        Param("overlap", 0.9, "Overlap", advanced=True, when=applies_when(method=ep.STFT)),
+        # shown with every method: the head map and the statistics always come from an STFT with this window
+        Param("window", 0.5, "STFT window (s)", "The STFT's window. The head map and the statistics are window means "
+              "of an STFT with this window whatever the method, so it applies to Wavelet too.", advanced=True),
+        Param("overlap", 0.9, "Overlap", "Of the STFT's frames; the STFT of the head map and the statistics "
+              "overlaps them by at most 50 %.", advanced=True),
         Param("smooth", 0.5, "Smoothing (s)", "Power smoothed over this long in time, per trial, before ERD. "
               "0: none, so one trial's amplitude is its raw |STFT| or |wavelet|.", advanced=True),
         Param("bands", [["mu", 8.0, 13.0], ["beta", 13.0, 30.0]], "Bands", advanced=True),
@@ -954,6 +957,9 @@ class TimeFrequency(Block):
                    else "")
         reject = (" Trials beyond ±{:g} µV on an analysed channel left out.".format(params["reject_uv"])
                   if params["reject_uv"] else "")
+        reject += " " + ep.window_means_text(ep.EpochSettings(
+            method=ep.tf_method(params["method"], params["width"]), window=params["window"],
+            overlap=params["overlap"], smooth=params["smooth"], topography=params["topography"]))
         if params["baseline_mode"] == ep.CONDITION:
             reference = ("'{}'".format(params["reference"]) if str(params["reference"]).strip()
                          else "the first condition of the trials")

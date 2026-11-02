@@ -1721,11 +1721,15 @@ class TFPreview(_Preview):
                        diverging=kind == ep.ERD_MAP or len(panels) == 3,
                        highlight={result.names[c] for c in result.channels})
         self.caption.setText("{}{} {:g}–{:g} Hz in the active window, {:g}–{:g} s, on every electrode computed "
-                             "({}); {}. ERD here is pooled over trials (window means).".format(
-                                 self._few_channels(), name, low, high, *result.settings.active,
+                             "({}); {}. ERD here is pooled over trials. {} {}".format(
+                                 "" if result.settings.topography else self._few_channels(
+                                     len(result.topo_channels), "turn on the block's Scalp map (Options) for "
+                                                                "every electrode"),
+                                 name, low, high, *result.settings.active,
                                  len(result.topo_channels),
                                  "B − A: the second condition minus the first" if len(panels) == 3 else
-                                 "choose a condition in Compare with to add B and B − A")
+                                 "choose a condition in Compare with to add B and B − A",
+                                 ep.window_means_text(result.settings), ep.TEMPLATE_POSITIONS)
                              + (" Not measured (switched off or flat), left out: {}.".format(
                                  ", ".join(result.unmeasured)) if getattr(result, "unmeasured", None) else ""))
 
@@ -1761,9 +1765,10 @@ class TFPreview(_Preview):
         self.caption.setText(
             "Per channel, each trial's ERD in the active window ({:g}–{:g} s) of {} (A){}. Difference: B − A in "
             "percentage points; Cliff's delta: B over A; Welch's t-test p, not corrected for the {} tests made: a "
-            "screen, not a finding.".format(*self.value.settings.active, pair[0],
-                                            " and {} (B)".format(pair[1]) if len(pair) == 2 else
-                                            "; choose a condition in Compare with for B", len(rows)))
+            "screen, not a finding. {}".format(*self.value.settings.active, pair[0],
+                                               " and {} (B)".format(pair[1]) if len(pair) == 2 else
+                                               "; choose a condition in Compare with for B", len(rows),
+                                               ep.window_means_text(self.value.settings)))
 
     def _condition(self):
         return self.value.conditions[max(0, self.condition.currentIndex())]
@@ -1859,10 +1864,11 @@ class TFPreview(_Preview):
         self.fill_height()
         return widget
 
-    def _few_channels(self):
-        n = len(self.value.tf)
-        return ("Only {} channel{} computed: leave the block's Channels empty for every electrode. "
-                .format(n, "" if n == 1 else "s") if n < 8 else "")
+    @staticmethod
+    def _few_channels(count, how):
+        """"Only 3 channels computed: <how>. " before a head map drawn from so few electrodes, else ""."""
+        return ("Only {} channel{} computed: {}. ".format(count, "" if count == 1 else "s", how)
+                if count < 8 else "")
 
     def chosen_band(self):
         """(name, low, high) of the band picked or typed; ValueError when it does not read or lies outside what
@@ -1944,10 +1950,11 @@ class TFPreview(_Preview):
                          levels=self.levels, colormap=self.colormap)
         self.traces, self.names = traces, names
         self._draw_moment()
-        self.caption.setText("{}{}{:g}–{:g} Hz, {:g} s per map{}; above, the moment the slider is on. {}".format(
-            self._few_channels(), band[0] + " " if band[0] else "", band[1], band[2], step,
+        self.caption.setText("{}{}{:g}–{:g} Hz, {:g} s per map{}; above, the moment the slider is on. {} {}".format(
+            self._few_channels(len(names), "leave the block's Channels empty for every electrode"),
+            band[0] + " " if band[0] else "", band[1], band[2], step,
             " (the first {})".format(MAPS_MOST) if every_start.size > MAPS_MOST else "",
-            self._caption(kind, trial, condition)))
+            self._caption(kind, trial, condition), ep.TEMPLATE_POSITIONS))
 
     def _draw_moment(self):
         if self.moment is None or self.moment.isHidden() or getattr(self, "traces", None) is None:
