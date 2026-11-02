@@ -214,9 +214,10 @@ class ParameterTopicTests(unittest.TestCase):
 
     def test_live_features_and_display_rate(self):
         from eeg.ui import features_window, monitor
-        source = inspect.getsource(features_window.FeaturesWindow.__init__)
-        self.assertIn("spin_box(.1,60,2,", source)
-        self.assertIn("spin_box(.01,10,.25,", source)
+        window = features_window.FeaturesWindow()
+        self.addCleanup(window.deleteLater)
+        boxes = (window.window_seconds, window.interval)
+        self.assertEqual([(b.minimum(), b.maximum(), b.value()) for b in boxes], [(0.1, 60, 2), (0.01, 10, 0.25)])
         self.assertEqual(features_window.FeaturesWindow.HISTORY_SECONDS, 60.0)
         self.assertEqual((monitor.FRAME_MS, monitor.SMOOTH_FRAME_MS, monitor.FAST_FRAME_MS), (50, 33, 16))
         self.assertEqual(monitor.DISPLAY_RATES, {60: 16, 30: 33})
