@@ -7,8 +7,8 @@
   al.'s normal approximation, used before, was passed up to 7.3% of the time (with 12 trials). An accuracy equal to
   the limit (40 of 60) is at it, not past it, however its mean over the folds rounds. The result, the report and
   Help say that the limit takes the tested trials as independent, which cross-validated ones are not (Noirhomme et
-  al., 2014), and a **permutation test is one click under the result**: 200 shuffles, or 100 to 5000 from its menu;
-  the setting stays in Cross-validate's Options.
+  al., 2014), and a **permutation test runs from under the result**: 200 shuffles, or any number picked or typed,
+  and Run; the number stays in Cross-validate's Options.
 - **Fixed: a marker file saved by a spreadsheet lost its first marker.** Excel's "CSV UTF-8" starts with a byte
   order mark, and the first time was read as text and skipped as a header.
 - **Fixed: trials edited as text moved by milliseconds.** The Workbench's text fields wrote six significant

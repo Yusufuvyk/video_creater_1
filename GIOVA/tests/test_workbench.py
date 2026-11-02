@@ -541,7 +541,7 @@ class RunTests(unittest.TestCase):
             self.assertEqual(page.canvas.cards["cross_validate1"].state, "done")
             self.assertEqual(page.canvas.cards["psd1"].state, "")
 
-    def test_a_permutation_test_is_one_click_under_the_result(self):
+    def test_a_permutation_test_runs_from_under_the_result(self):
         with scratch() as directory:
             path = save_fif(lateralised(trials=20), directory)
             page = mi_page(path)
@@ -550,28 +550,33 @@ class RunTests(unittest.TestCase):
             page.canvas.select("cross_validate1")
             texts = " ".join(label.text() for label in page.inspector.findChildren(QtWidgets.QLabel))
             self.assertIn("so it is approximate", texts)                     # the limit alone: said so
-            button = next(b for b in page.inspector.findChildren(QtWidgets.QToolButton)
-                          if b.text().startswith("Permutation test"))
-            self.assertEqual(button.text(), "Permutation test (200 shuffles)")
-            self.assertEqual([a.text() for a in button.menu().actions()],
-                             ["100 shuffles", "200 shuffles", "500 shuffles", "1000 shuffles", "5000 shuffles"])
-            with mock.patch.object(page, "run") as run:
-                button.click()                                                # a click: 200
-            run.assert_called_once_with(["cross_validate1"])
-            self.assertEqual(page.graph.params("cross_validate1")["permutations"], 200)
-            button.menu().actions()[0].trigger()                              # 100, from the menu, and run
-            self.assertEqual(page.graph.params("cross_validate1")["permutations"], 100)
-            self.assertEqual(page.inspector.fields["permutations"].widget.value(), 100)   # kept in Options
+            shuffles, go = page.inspector.previews["scores"].permutation_row
+            # a few to pick, as the previews' other boxes offer, or any whole number typed
+            self.assertTrue(shuffles.isEditable())
+            self.assertEqual([shuffles.itemText(k) for k in range(shuffles.count())],
+                             ["100", "200", "500", "1000", "5000"])
+            self.assertEqual(shuffles.currentText(), "200")
+            validate = shuffles.lineEdit().validator().validate
+            self.assertEqual(validate("12a", 0)[0], QtGui.QValidator.State.Invalid)
+            self.assertNotEqual(validate("0", 0)[0], QtGui.QValidator.State.Acceptable)
+            # a plain push button, as the previews' other actions; no split button with its own arrow
+            self.assertIsInstance(go, QtWidgets.QPushButton)
+            self.assertIsNone(go.menu())
+            shuffles.setEditText("37")
+            go.click()                                                        # set, and run at once
+            self.assertEqual(page.graph.params("cross_validate1")["permutations"], 37)
+            self.assertEqual(page.inspector.fields["permutations"].widget.value(), 37)    # kept in Options
             wait_for_run(page)
-            scores = page.outputs()["cross_validate1"]["scores"]
-            self.assertEqual(scores.permutations, 100)
+            self.assertEqual(page.outputs()["cross_validate1"]["scores"].permutations, 37)
             page.canvas.select("cross_validate1")
-            self.assertFalse(any(b.text().startswith("Permutation test")
-                                 for b in page.inspector.findChildren(QtWidgets.QToolButton)))
+            self.assertIsNone(getattr(page.inspector.previews["scores"], "permutation_row", None))
             texts = " ".join(label.text() for label in page.inspector.findChildren(QtWidgets.QLabel))
             self.assertIn("Permutation test: p = ", texts)
             self.assertNotIn("so it is approximate", texts)
-
+        from eeg.ui.workbench.previews import ScoresPreview
+        self.assertEqual(ScoresPreview.shuffles_typed(""), 200)                # an emptied box: the default
+        self.assertEqual(ScoresPreview.shuffles_typed("0"), 200)
+        self.assertEqual(ScoresPreview.shuffles_typed(" 750 "), 750)
 
 class FileTests(unittest.TestCase):
     def setUp(self):

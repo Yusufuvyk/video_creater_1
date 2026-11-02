@@ -1284,8 +1284,10 @@ def roc_points(positive, scores):
 
 
 class ScoresPreview(_Preview):
-    #: label shuffles a permutation test can be asked for under a result; a click runs the first
-    SHUFFLES = (200, 100, 500, 1000, 5000)
+    #: label shuffles offered for a permutation test under a result; any other can be typed, up to MOST_SHUFFLES
+    SHUFFLES = (100, 200, 500, 1000, 5000)
+    DEFAULT_SHUFFLES = 200
+    MOST_SHUFFLES = 100000
 
     def __init__(self, scores, large=False):
         super().__init__(scores, large)
@@ -1364,25 +1366,41 @@ class ScoresPreview(_Preview):
         self.controls += [note, table, save]
 
     def offer_permutation_test(self, run):
-        """A button under the note: `run(shuffles)` sets the block's permutation test, which runs it. Offered by
-        the Workbench's inspector only, so a report or a window of its own has no button that does nothing."""
+        """A row under the note, as the previews' other choosers are: how many label shuffles (a few to pick, or
+        any typed) and Run, which sets the block's permutation test and runs it. Offered by the Workbench's
+        inspector only, so a report or a window of its own has no control that does nothing."""
         if self.approximate is None:
             return None
-        button = QtWidgets.QToolButton()
-        button.setText("Permutation test ({} shuffles)".format(self.SHUFFLES[0]))
-        button.setToolTip("Run the cross-validation again with the labels shuffled (Ojala & Garriga, 2010): "
-                          "{0} shuffles give p down to {1:.3g}, and take {0} times as long. Other numbers in the "
-                          "menu; the setting stays in Options.".format(self.SHUFFLES[0], 1 / (self.SHUFFLES[0] + 1)))
-        button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        menu = QtWidgets.QMenu(button)
-        for shuffles in sorted(self.SHUFFLES):
-            menu.addAction("{} shuffles".format(shuffles), lambda n=shuffles: run(n))
-        button.setMenu(menu)
-        button.clicked.connect(lambda: run(self.SHUFFLES[0]))
-        self.column.insertWidget(self.column.indexOf(self.approximate) + 1, button,
-                                 alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
-        self.controls.append(button)
-        return button
+        shuffles = NoScrollComboBox()
+        shuffles.setEditable(True)
+        shuffles.addItems([str(n) for n in self.SHUFFLES])
+        shuffles.setCurrentText(str(self.DEFAULT_SHUFFLES))
+        shuffles.lineEdit().setValidator(QtGui.QIntValidator(1, self.MOST_SHUFFLES, shuffles))
+        shuffles.setToolTip("Label shuffles: pick, or type any number. {0} give p down to {1:.3g} and take {0} "
+                            "times as long as one cross-validation".format(self.DEFAULT_SHUFFLES,
+                                                                          1 / (self.DEFAULT_SHUFFLES + 1)))
+        go = QtWidgets.QPushButton("Run")
+        go.setToolTip("Run the cross-validation again with the labels shuffled (Ojala & Garriga, 2010); the "
+                      "number stays in the block's Options")
+        go.clicked.connect(lambda: run(self.shuffles_typed(shuffles.currentText())))
+        row = QtWidgets.QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        for widget in (QtWidgets.QLabel("Permutation test"), shuffles, QtWidgets.QLabel("shuffles"), go):
+            row.addWidget(widget)
+        row.addStretch(1)
+        holder = QtWidgets.QWidget()
+        holder.setLayout(row)
+        self.column.insertWidget(self.column.indexOf(self.approximate) + 1, holder)
+        self.controls.append(holder)
+        #: (shuffles box, Run button)
+        self.permutation_row = (shuffles, go)
+        return holder
+
+    @classmethod
+    def shuffles_typed(cls, text):
+        """The number of shuffles in the box; what cannot be read (an emptied box): the default."""
+        text = text.strip()
+        return min(int(text), cls.MOST_SHUFFLES) if text.isdigit() and int(text) > 0 else cls.DEFAULT_SHUFFLES
 
     def _add_roc(self, scores):
         """The ROC curve of every tested trial, for two conditions: how well the scores rank one above the other."""

@@ -908,8 +908,9 @@ chance.</p>
 <h3>Permutation test</h3>
 <p>The whole cross-validation is run again with the labels shuffled, B times; p = (1 + the number that score
 as well or better) / (B + 1) (Ojala &amp; Garriga, 2010). The smallest p is 1 / (B + 1): 0.01 for 99. When it is
-run, being above chance also needs p ≤ 0.05. Trials are shuffled as independent units. Under the result, <i>Permutation
-test</i> runs one with 200 shuffles (p down to 0.005) or another number; the setting stays in Options.</p>
+run, being above chance also needs p ≤ 0.05. Trials are shuffled as independent units. Under a result the limit
+alone judged, <i>Permutation test</i> takes the number of shuffles (200, p down to 0.005; pick another or type any)
+and <i>Run</i> runs it; the number stays in Cross-validate's Options.</p>
 <h3>Time left</h3>
 <p>Guessed from the pace of the current block's own steps (its folds, its permutations) once it has done a
 few; quick blocks before it say nothing of how long a cross-validation takes. <i>in this block</i>: more blocks
