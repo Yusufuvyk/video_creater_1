@@ -139,6 +139,17 @@ class InterfaceSettings(QtWidgets.QWidget):
         note.setWordWrap(True)
         note.setStyleSheet(muted())
         layout.addRow(note)
+        self.drag = NoScrollComboBox()
+        self.drag.addItem("Moves the sheet (Shift + drag selects)", "pan")
+        self.drag.addItem("Selects blocks (Space or middle button + drag moves the sheet)", "select")
+        self.drag.setCurrentIndex(max(0, self.drag.findData(setting('workbench/drag'))))
+        self.drag.currentIndexChanged.connect(lambda _i: set_setting('workbench/drag', self.drag.currentData()))
+        layout.addRow("Dragging on the Workbench's sheet", self.drag)
+        note = QtWidgets.QLabel("Either way two fingers or the wheel move the sheet and Ctrl + wheel or a pinch "
+                                "zooms. At once, no restart.")
+        note.setWordWrap(True)
+        note.setStyleSheet(muted())
+        layout.addRow(note)
 
     def _tooltips_changed(self, on):
         set_setting('ui/tooltips', bool(on))
@@ -155,6 +166,7 @@ class InterfaceSettings(QtWidgets.QWidget):
         self.tooltips.setChecked(setting('ui/tooltips'))
         install_tooltip_switch(QtWidgets.QApplication.instance(), self.tooltips.isChecked())
         self.theme.setCurrentIndex(max(0, self.theme.findData(setting('ui/theme'))))
+        self.drag.setCurrentIndex(max(0, self.drag.findData(setting('workbench/drag'))))
 
 
 class GraphSettings(QtWidgets.QWidget):

@@ -232,11 +232,13 @@ class SheetTests(unittest.TestCase):
         self.assertEqual((h.value(), v.value()), (start[0] - 30, start[1] + 20))
         self.wheel(empty, angle=QtCore.QPoint(0, -120))
         self.assertEqual(v.value(), start[1] + 80)
-        # pinch (Ctrl + wheel) and + / - zoom
+        # pinch (Ctrl + wheel) and + / - zoom; each eases to its level, settle() goes there at once
         scale = self.canvas.transform().m11()
         self.wheel(empty, angle=QtCore.QPoint(0, 120), modifiers=QtCore.Qt.KeyboardModifier.ControlModifier)
+        self.canvas.settle()
         self.assertAlmostEqual(self.canvas.transform().m11(), scale * 1.15)
         QtTest.QTest.keyClick(self.canvas, QtCore.Qt.Key.Key_Minus)
+        self.canvas.settle()
         self.assertAlmostEqual(self.canvas.transform().m11(), scale)
         # Shift + drag on empty sheet still draws a selection box
         card = self.canvas.cards[load]
@@ -247,6 +249,128 @@ class SheetTests(unittest.TestCase):
         self.mouse(QtCore.QEvent.Type.MouseMove, top, left, shift)
         self.mouse(QtCore.QEvent.Type.MouseButtonRelease, top, none, shift)
         self.assertEqual(self.canvas.selected(), load)
+
+    def test_the_sheet_is_free_to_move_and_zoom(self):
+        """No edge and no scroll bars; zoom toward the mouse within 5-400 %, its level in the zoom bar; 0, 1, 2."""
+        from eeg.ui.workbench.canvas import ZOOM_MAX, ZOOM_MIN
+        self.page.resize(1200, 700)
+        self.page.show()
+        app.processEvents()
+        canvas = self.canvas
+        load = canvas.add_block("load")
+        self.assertEqual(canvas.horizontalScrollBarPolicy(), QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        bar = canvas.zoom_bar
+        self.assertTrue(bar.isVisible())
+        self.assertLess(bar.geometry().left(), canvas.width() / 2)               # lower left corner
+        self.assertGreater(bar.geometry().top(), canvas.height() / 2)
+        # far beyond where the old sheet ended (5000 px from its middle), and back
+        centre = canvas.mapToScene(canvas.viewport().rect().center())
+        for _ in range(40):
+            canvas.scroll_by(900, 0)
+        self.assertGreater(canvas.mapToScene(canvas.viewport().rect().center()).x(), centre.x() + 35000)
+        for _ in range(40):
+            canvas.scroll_by(-900, 0)
+        self.assertAlmostEqual(canvas.mapToScene(canvas.viewport().rect().center()).x(), centre.x(), delta=1)
+        # the point under the mouse stays put while zooming toward it
+        point = QtCore.QPoint(300, 200)
+        under = canvas.mapToScene(point)
+        canvas.zoom(2.0, point)
+        canvas.settle()
+        self.assertLess((canvas.mapToScene(point) - under).manhattanLength(), 2)
+        self.assertEqual(bar.level.text(), "200 %")
+        canvas.zoom(1000)
+        canvas.settle()
+        self.assertAlmostEqual(canvas.zoom_level, ZOOM_MAX)                      # kept within its range
+        canvas.zoom(1e-6)
+        canvas.settle()
+        self.assertAlmostEqual(canvas.zoom_level, ZOOM_MIN)
+        QtTest.QTest.keyClick(canvas, QtCore.Qt.Key.Key_0)
+        canvas.settle()
+        self.assertAlmostEqual(canvas.zoom_level, 1.0)
+        self.assertEqual(bar.level.text(), "100 %")
+        # 1: the whole pipeline, even a long one, in view; 2: the selection
+        far = canvas.add_block("filter", QtCore.QPointF(6000, 3000))
+        QtTest.QTest.keyClick(canvas, QtCore.Qt.Key.Key_1)
+        canvas.settle()
+        view = canvas.mapToScene(canvas.viewport().rect()).boundingRect()
+        for node in (load, far):
+            self.assertTrue(view.contains(canvas.cards[node].sceneBoundingRect()), node)
+        canvas.select(far)
+        QtTest.QTest.keyClick(canvas, QtCore.Qt.Key.Key_2)
+        canvas.settle()
+        self.assertTrue(canvas.viewport().rect().contains(
+            canvas.mapFromScene(canvas.cards[far].sceneBoundingRect()).boundingRect()))
+        self.assertFalse(canvas.mapToScene(canvas.viewport().rect()).boundingRect().contains(
+            canvas.cards[load].sceneBoundingRect()))
+
+    def test_dragging_on_the_sheet_follows_the_setting(self):
+        from eeg.ui.preferences import set_setting, user_settings
+        self.addCleanup(lambda: user_settings().remove("workbench/drag"))
+        self.page.resize(1200, 700)
+        self.page.show()
+        app.processEvents()
+        load = self.canvas.add_block("load")
+        card = self.canvas.cards[load]
+        self.canvas.scene().clearSelection()
+        h, v = self.canvas.horizontalScrollBar(), self.canvas.verticalScrollBar()
+        left, none = QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.NoButton
+        corner = self.canvas.mapFromScene(card.sceneBoundingRect().bottomRight()) + QtCore.QPoint(30, 30)
+        top = self.canvas.mapFromScene(card.sceneBoundingRect().topLeft()) - QtCore.QPoint(30, 30)
+        set_setting("workbench/drag", "select")
+        start = (h.value(), v.value())
+        self.mouse(QtCore.QEvent.Type.MouseButtonPress, corner, left)
+        self.mouse(QtCore.QEvent.Type.MouseMove, top, left)
+        self.mouse(QtCore.QEvent.Type.MouseButtonRelease, top, none)
+        self.assertEqual((h.value(), v.value()), start)                          # the sheet stayed
+        self.assertEqual(self.canvas.selected(), load)                           # a box selected the block
+        set_setting("workbench/drag", "pan")
+        self.mouse(QtCore.QEvent.Type.MouseButtonPress, corner, left)
+        self.mouse(QtCore.QEvent.Type.MouseMove, corner + QtCore.QPoint(40, 0), left)
+        self.mouse(QtCore.QEvent.Type.MouseButtonRelease, corner + QtCore.QPoint(40, 0), none)
+        self.assertEqual(h.value(), start[0] - 40)                               # the sheet moved
+
+    def test_a_block_dragged_to_the_edge_moves_the_sheet_along(self):
+        self.page.resize(1200, 700)
+        self.page.show()
+        app.processEvents()
+        canvas = self.canvas
+        node = canvas.add_block("load")
+        canvas.scene().clearSelection()
+        card = canvas.cards[node]
+        grab = canvas.mapFromScene(card.mapToScene(QtCore.QPointF(60, 14)))
+        edge = QtCore.QPoint(canvas.viewport().width() - 4, grab.y())
+        h = canvas.horizontalScrollBar()
+        left, none = QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.NoButton
+        self.mouse(QtCore.QEvent.Type.MouseButtonPress, grab, left)
+        self.mouse(QtCore.QEvent.Type.MouseMove, edge, left)
+        before, x_before = h.value(), card.pos().x()
+        for _ in range(10):
+            canvas._edge_step()
+        self.assertGreater(h.value(), before)                                    # the sheet moved along
+        self.assertGreater(card.pos().x(), x_before)                             # and the block with it
+        self.mouse(QtCore.QEvent.Type.MouseButtonRelease, edge, none)
+        self.assertFalse(canvas._edge.isActive())
+
+    def test_a_sheet_opens_where_it_was_left(self):
+        canvas = self.canvas
+        self.page.resize(1200, 700)
+        self.page.show()
+        app.processEvents()
+        canvas.add_block("load")
+        canvas.zoom_to(1.5, smooth=False)
+        canvas.scroll_by(120, -40)
+        state = canvas.view_state()
+        from eeg.ui.workbench.canvas import Canvas
+        other = Canvas()
+        other.resize(canvas.size())
+        other.show()
+        other.set_graph(canvas.graph.copy())
+        other.saved_view = state
+        other.first_view()
+        self.addCleanup(other.close)
+        self.assertEqual(other.view_state()[0], state[0])
+        self.assertAlmostEqual(other.view_state()[1], state[1], delta=1)
+        self.assertAlmostEqual(other.view_state()[2], state[2], delta=1)
 
     def test_a_block_is_dragged_by_the_mouse_even_when_wired(self):
         """Real mouse events through the view: the path a hand takes, not a call to setPos."""

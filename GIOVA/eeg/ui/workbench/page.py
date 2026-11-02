@@ -282,22 +282,6 @@ class WorkbenchPage(QtWidgets.QWidget):
         only(python, "code-xml", "Python", more="The pipeline as Python that runs without GIOVA and computes "
                                                 "the same numbers: a zip with a short run.py, or one script")
         python.clicked.connect(lambda: self.export_python())
-        # the view's own controls sit on the sheet, in its lower right corner: they change what is seen, not
-        # the pipeline
-        self.view_tools = QtWidgets.QFrame(self.tabs)
-        self.view_tools.setObjectName("viewtools")
-        self.view_tools.setStyleSheet("#viewtools {{ background: {}; border: 1px solid {}; border-radius: 6px; }}"
-                                      .format(color("card"), color("line")))
-        tools = QtWidgets.QHBoxLayout(self.view_tools)
-        tools.setContentsMargins(2, 2, 2, 2)
-        tools.setSpacing(0)
-        for shape, title, key, action in (("minus", "Zoom out", "-", lambda: self.canvas.zoom(1 / 1.15)),
-                                          ("plus", "Zoom in", "+", lambda: self.canvas.zoom(1.15)),
-                                          ("scan", "Fit the whole pipeline", "F", lambda: self.canvas.fit())):
-            button = only(QtWidgets.QToolButton(), shape, title, key, size=16)
-            button.clicked.connect(action)
-            tools.addWidget(button)
-        self.tabs.installEventFilter(self)
         # one line on a wide screen; on a narrow one (a laptop at high scaling) the groups go on to a second
         # line instead of pushing the window past the screen's edge
         bar = WrapRow(spacing=12)
@@ -441,24 +425,12 @@ class WorkbenchPage(QtWidgets.QWidget):
             self.errors_unseen += 1
             self.strip.set_errors(self.errors_unseen)
 
-    def eventFilter(self, obj, event):
-        if obj is self.tabs and event.type() in (QtCore.QEvent.Type.Resize, QtCore.QEvent.Type.Show):
-            self._place_view_tools()
-        return super().eventFilter(obj, event)
-
-    def _place_view_tools(self):
-        """The zoom and fit buttons in the sheet's lower right corner, clear of its scroll bars."""
-        self.view_tools.adjustSize()
-        size = self.view_tools.size()
-        self.view_tools.move(self.tabs.width() - size.width() - 24, self.tabs.height() - size.height() - 24)
-        self.view_tools.raise_()
-
     def showEvent(self, event):
         super().showEvent(event)
         if not getattr(self.sheet, "fitted", False):
-            # built while hidden, the sheet had no size to fit to: fit once it has one
+            # built while hidden, the sheet had no size to fit to: its first view once it has one
             self.sheet.fitted = True
-            QtCore.QTimer.singleShot(0, self.canvas, self.canvas.fit)     # bound: never after the canvas is gone
+            QtCore.QTimer.singleShot(0, self.canvas, self.canvas.first_view)  # bound: never after the canvas is gone
 
     # ---------------- the sheets ----------------
 
@@ -560,10 +532,11 @@ class WorkbenchPage(QtWidgets.QWidget):
         self._remember()
 
     def _fit_later(self, sheet):
-        """The whole pipeline in view once its canvas has a size: a tab made while hidden has none yet."""
+        """The sheet's first view (as left last session, else the whole pipeline) once its canvas has a size: a
+        tab made while hidden has none yet."""
         sheet.fitted = sheet.canvas.isVisible()
         if sheet.fitted:
-            QtCore.QTimer.singleShot(0, sheet.canvas, sheet.canvas.fit)   # bound: never after the canvas is gone
+            QtCore.QTimer.singleShot(0, sheet.canvas, sheet.canvas.first_view)  # bound: never after it is gone
 
     def new_tab(self, template=None, graph=None):
         """A new tab, with `graph`, a template or literature profile by title, or an empty sheet; shown."""
@@ -1315,7 +1288,8 @@ class WorkbenchPage(QtWidgets.QWidget):
         order = [self._sheet_at(i) for i in range(self.tabs.count())]
         order = [s for s in order if s is not None] + [s for s in self.sheets if s.window is not None]
         store.setValue("workbench/sheets", json.dumps([
-            dict(sheet=s.graph.to_dict(), file=str(s.path) if s.path else "", modified=bool(s.modified))
+            dict(sheet=s.graph.to_dict(), file=str(s.path) if s.path else "", modified=bool(s.modified),
+                 view=s.canvas.view_state() if getattr(s, "fitted", False) else s.canvas.saved_view)
             for s in order]))
         store.setValue("workbench/current", order.index(self.sheet) if self.sheet in order else 0)
         store.setValue("workbench/sheet", json.dumps(self.graph.to_dict()))
@@ -1327,7 +1301,7 @@ class WorkbenchPage(QtWidgets.QWidget):
         entries = []
         try:
             text = setting("workbench/sheets", "")
-            entries = [(Graph.from_dict(e["sheet"]), e.get("file") or None, bool(e.get("modified")))
+            entries = [(Graph.from_dict(e["sheet"]), e.get("file") or None, bool(e.get("modified")), e.get("view"))
                        for e in (json.loads(text) if text else [])]
         except (ValueError, TypeError, KeyError):
             entries = []
@@ -1343,17 +1317,17 @@ class WorkbenchPage(QtWidgets.QWidget):
                 graph = None
             if graph is None:
                 graph, path, modified = templates.TEMPLATES[FIRST_TEMPLATE](), None, False
-            entries = [(graph, path, modified)]
+            entries = [(graph, path, modified, None)]
         self._restoring = True
         try:
-            for graph, path, modified in entries:
+            for graph, path, modified, view in entries:
                 if path:
                     try:
                         # a sheet that is not what its file holds has changes, whatever the flag says
                         modified = modified or Graph.load(path).to_dict() != graph.to_dict()
                     except ValueError:
                         modified = True          # its file is gone or unreadable: the sheet is the only copy
-                self._make_sheet(graph, path, modified)
+                self._make_sheet(graph, path, modified).canvas.saved_view = view    # shown once it has a size
         finally:
             self._restoring = False
         self.activate(self.sheets[min(max(current, 0), len(self.sheets) - 1)])

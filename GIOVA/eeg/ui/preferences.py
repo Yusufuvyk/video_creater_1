@@ -37,6 +37,9 @@ DEFAULTS = {
     'ui/theme': ('dark', str),
     # The Games tab: festival games on the Monitor's stream. Off hides the tab only.
     'ui/show_games': (True, bool),
+    # A plain drag on the Workbench's empty sheet: "pan" moves the sheet (Shift + drag selects), "select" draws a
+    # selection box (Space or the middle button + drag moves the sheet).
+    'workbench/drag': ('pan', str),
 }
 
 _store = None

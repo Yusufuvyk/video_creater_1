@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **The Workbench's sheet moves freely.** It has no edge and no scroll bars; zooming eases toward the mouse, from
+  5 % to 400 %. A zoom bar in its lower left corner shows the level and offers 50-200 %, the whole pipeline and the
+  selected blocks (keys 0, 1, 2). A block or a wire dragged to the sheet's edge moves it along, and each tab opens
+  where it was left. Settings → Interface chooses what a plain drag on empty sheet does: move the sheet, or select.
 - **Time-frequency: STFT and Wavelet.** Morlet and CWT were one transform, complex Morlet wavelets, offered as two
   methods. Now there is one Wavelet method; its width is given as cycles per Hz, or as any complex Morlet cmorB-C
   for every frequency (cmor1.5-1.0 spans 5.44 cycles). Pipelines saved with morlet or cwt open as these and give

@@ -484,6 +484,8 @@ Help (F1) has them all either way.</td></tr>
 <tr><td>Interface → Theme</td><td>dark</td><td>The window's colours, from the next start; reports and saved
 figures are on white either way.</td></tr>
 <tr><td>Interface → Show the Games tab</td><td>on</td><td>Games played on the Monitor's live stream.</td></tr>
+<tr><td>Interface → Dragging on the Workbench's sheet</td><td>moves the sheet</td><td>Or selects blocks; Space or
+the middle button and a drag then moves the sheet. Two fingers or the wheel move it either way.</td></tr>
 <tr><td>Recording → Folder, File name</td><td>Data, live</td><td>Where live recordings are written (the
 active project) and how their names begin; date and time follow.</td></tr>
 </table>
@@ -749,8 +751,14 @@ setting that means nothing with the method or design chosen (an STFT window unde
 is kept for when it applies again</td></tr>
 <tr><td>Help on a block</td><td>Right-click it, <b>Help</b></td></tr>
 <tr><td>Remove</td><td>Select a block or wire, Delete</td></tr>
-<tr><td>Move around</td><td>Drag on empty sheet or scroll with two fingers; pinch or Ctrl + wheel zooms; the
-<b>−</b> <b>+</b> and fit buttons in the sheet's lower right corner (F fits all); Shift + drag selects several</td></tr>
+<tr><td>Move around</td><td>The sheet has no edge. Drag on empty sheet, scroll with two fingers or the wheel, or
+hold Space (or the middle button) and drag; a block or a wire dragged to the sheet's edge moves it along. Shift + drag
+selects several. In Settings → Interface a plain drag can select instead (Space or the middle button then moves the
+sheet)</td></tr>
+<tr><td>Zoom</td><td>Pinch, Ctrl + wheel or + / − zoom toward the mouse, from 5 % to 400 %. The zoom bar in the
+sheet's lower left corner shows the level; its menu offers 50–200 %, the whole pipeline and the selected blocks.
+Keys: <b>0</b> 100 %, <b>1</b> (or F) the whole pipeline, <b>2</b> the selected blocks. A tab opens where it was
+left</td></tr>
 </table>
 <h3>Running</h3>
 <table>

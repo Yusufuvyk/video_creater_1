@@ -5,14 +5,18 @@ methods, so every rule (a wire's type must fit, no loops) is the engine's and
 the sheet can never hold a pipeline the engine would refuse.
 
 Mouse and touchpad: drag a block to move it; drag from a port to another to wire
-them (the ports that would accept the wire light up); drag on empty sheet to move
-around (also the middle button, or Space + drag); Shift + drag on empty sheet to
-select. Two-finger scroll (or the wheel) moves around; pinch, Ctrl + wheel or the
-+ / - keys zoom. Delete removes the selection.
+them (the ports that would accept the wire light up). Drag on empty sheet moves it
+(Shift + drag selects), or selects (Space or middle button + drag moves it), as
+Settings → Interface chooses. Two-finger scroll (or the wheel) moves around; pinch,
+Ctrl + wheel or the + / - keys zoom toward the mouse, easing to the new level. The
+zoom bar in the lower left corner shows the level: 0 is 100 %, 1 the whole pipeline,
+2 the selection. The sheet has no edge and no scroll bars, and a block or a wire
+dragged to its edge moves it along. Delete removes the selection.
 """
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
 from ...pipeline import block, graph as g
+from ..icons import only
 from ..theme import color
 
 #: One colour per kind of data, on the ports and the wires that carry it: mid tones that read on the
@@ -47,9 +51,18 @@ HEADER = 26
 ROW = 20
 RADIUS = 6
 PORT = 6
-#: Fit never zooms out further than this: smaller text cannot be read. 0.5, not 0.75: at 0.75 a seven-block
-#: pipeline did not fit a laptop's sheet and Fit seemed to do nothing (31 October 2026); block names still read.
-MIN_FIT = 0.5
+#: How far the sheet zooms: 5 % shows a long pipeline whole in a small window, 400 % a block's words up close.
+ZOOM_MIN, ZOOM_MAX = 0.05, 4.0
+#: One wheel notch, one + / - key or one zoom button: this factor.
+ZOOM_STEP = 1.15
+#: The levels the zoom bar offers by name.
+ZOOM_LEVELS = (0.5, 0.75, 1.0, 1.5, 2.0)
+#: A zoom or a fit eases to where it goes over this long (ms); a pinch follows the fingers at once.
+EASE_MS = 160
+#: A block or a wire dragged within this many pixels of the sheet's edge moves the sheet along, faster the nearer.
+EDGE = 32
+#: What a plain drag on empty sheet does (Settings → Interface): move the sheet, or draw a selection box.
+DRAG_PANS, DRAG_SELECTS = "pan", "select"
 #: Blocks dragged by hand land on this grid, so a pipeline lines up without effort.
 SNAP = 10
 #: The sheet's dots: one every GRID, a stronger one every GRID * MAJOR.
@@ -263,6 +276,57 @@ def curve(a, b):
     return path
 
 
+def add_view_actions(menu, canvas):
+    """The levels and views a sheet can be shown at, with their keys: the zoom bar's menu and the sheet's own."""
+    for level in ZOOM_LEVELS:
+        menu.addAction("{:.0f} %{}".format(level * 100, "\t0" if level == 1.0 else ""),
+                       lambda _c=False, z=level: canvas.zoom_to(z))
+    menu.addSeparator()
+    menu.addAction("The whole pipeline\t1", lambda: canvas.fit(smooth=True))
+    menu.addAction("The selected blocks\t2", canvas.zoom_to_selection)
+
+
+class ZoomBar(QtWidgets.QFrame):
+    """The sheet's view controls in its lower left corner: zoom out, the level (a menu of levels, and of the
+    whole pipeline or the selection), zoom in, and the whole pipeline. They change what is seen, never the
+    pipeline."""
+
+    def __init__(self, canvas):
+        super().__init__(canvas)
+        self.canvas = canvas
+        self.setObjectName("zoombar")
+        self.setStyleSheet("#zoombar {{ background: {}; border: 1px solid {}; border-radius: 6px; }}"
+                           .format(color("card"), color("line")))
+        row = QtWidgets.QHBoxLayout(self)
+        row.setContentsMargins(2, 2, 2, 2)
+        row.setSpacing(0)
+        smaller = only(QtWidgets.QToolButton(), "minus", "Zoom out", "-", size=16)
+        smaller.clicked.connect(lambda: canvas.zoom(1 / ZOOM_STEP))
+        self.level = QtWidgets.QToolButton()
+        self.level.setToolTip("Zoom level: click for 50-200 %, the whole pipeline or the selected blocks. Keys 0: "
+                              "100 %, 1: the whole pipeline, 2: the selected blocks; Ctrl + wheel or a pinch zooms "
+                              "toward the mouse")
+        self.level.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
+        menu = QtWidgets.QMenu(self.level)
+        add_view_actions(menu, canvas)
+        self.level.setMenu(menu)
+        # the number itself opens the menu (its tooltip says so): no arrow beside it
+        self.level.setStyleSheet("QToolButton::menu-indicator { image: none; width: 0px; }")
+        # wide enough for the widest level, so the bar does not jump as the number changes
+        self.level.setMinimumWidth(self.level.fontMetrics().horizontalAdvance("400 %") + 18)
+        larger = only(QtWidgets.QToolButton(), "plus", "Zoom in", "+", size=16)
+        larger.clicked.connect(lambda: canvas.zoom(ZOOM_STEP))
+        whole = only(QtWidgets.QToolButton(), "scan", "The whole pipeline", "1", size=16)
+        whole.clicked.connect(lambda: canvas.fit(smooth=True))
+        for button in (smaller, self.level, larger, whole):
+            row.addWidget(button)
+        canvas.zoom_changed.connect(self.show_level)
+        self.show_level(1.0)
+
+    def show_level(self, level):
+        self.level.setText("{:.0f} %".format(level * 100))
+
+
 class Canvas(QtWidgets.QGraphicsView):
     """Shows one Graph and edits it. `changed` fires on every edit the pipeline would notice."""
 
@@ -273,14 +337,21 @@ class Canvas(QtWidgets.QGraphicsView):
     help_for = QtCore.Signal(str)         # a block type whose Help page is asked for, from its menu
     moved = QtCore.Signal()               # blocks were dragged to new places
     released = QtCore.Signal()            # the mouse button is up again
+    zoom_changed = QtCore.Signal(float)   # the level the sheet is drawn at, 1.0 = 100 %
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setScene(QtWidgets.QGraphicsScene(self))
-        self.scene().setSceneRect(-5000, -5000, 10000, 10000)
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         self.setDragMode(QtWidgets.QGraphicsView.DragMode.RubberBandDrag)
-        self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        # The sheet has no edge (`_keep_room` grows it as the view moves) and no scroll bars: it is moved by
+        # dragging, two fingers, the wheel or the keys, as a drawing program's canvas is.
+        self.setSceneRect(QtCore.QRectF(-5000, -5000, 10000, 10000))
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # a zoom keeps the point under the mouse (or the view's centre) where it is: placed here, not by Qt
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.NoAnchor)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setViewportUpdateMode(QtWidgets.QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
         # no background cache: Qt clears it on zoom but not on scroll, and shifts it by whole pixels while
         # the squares sit on fractional ones - stray, doubled lines and missing pieces when the sheet is
@@ -301,6 +372,18 @@ class Canvas(QtWidgets.QGraphicsView):
         self.snapping = False
         #: True while the left button is down on the sheet
         self.pressing = False
+        #: the level a zoom in progress goes to (the level itself once it is there)
+        self._target = 1.0
+        #: the running zoom or fit (a QVariantAnimation), else None
+        self._easing = None
+        #: [zoom level, x, y of the view's centre] the sheet was left at last session, shown once instead of Fit
+        self.saved_view = None
+        #: (view position, screen position, buttons, keys) of the latest move while a block or wire is dragged
+        self._mouse = None
+        self._edge = QtCore.QTimer(self)
+        self._edge.setInterval(16)
+        self._edge.timeout.connect(self._edge_step)
+        self.zoom_bar = ZoomBar(self)
 
     # ---------------- building ----------------
 
@@ -406,25 +489,142 @@ class Canvas(QtWidgets.QGraphicsView):
     def _selection_changed(self):
         self.selection.emit(self.selected())
 
-    def fit(self):
-        if not self.cards:
-            self.resetTransform()
-            self.centerOn(0, 0)
-            return
-        box = self.scene().itemsBoundingRect().adjusted(-40, -40, 40, 40)
-        self.fitInView(box, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-        scale = self.transform().m11()
-        if scale > 1.0:                           # never blow a small pipeline up
-            self.resetTransform()
-            self.centerOn(box.center())
-        elif scale < MIN_FIT:                     # nor shrink a long one past reading: scroll instead
-            self.setTransform(QtGui.QTransform.fromScale(MIN_FIT, MIN_FIT))
-            self.centerOn(QtCore.QPointF(box.left() + self.viewport().width() / (2 * MIN_FIT), box.center().y()))
+    # ---------------- moving and zooming ----------------
 
-    def zoom(self, factor):
-        scale = self.transform().m11() * factor
-        if 0.2 <= scale <= 3.0:
-            self.scale(factor, factor)
+    @property
+    def zoom_level(self):
+        """The scale the sheet is drawn at: 1.0 is 100 %."""
+        return self.transform().m11()
+
+    def _keep_room(self):
+        """The sheet reaches well past the view and every block, so no move ever meets its edge."""
+        visible = self.mapToScene(self.viewport().rect()).boundingRect()
+        room = 3 * max(visible.width(), visible.height(), 1.0)
+        wanted = visible.adjusted(-room, -room, room, room)
+        if self.cards:
+            wanted = wanted.united(self.scene().itemsBoundingRect())
+        if not self.sceneRect().contains(wanted):
+            self.setSceneRect(self.sceneRect().united(wanted))
+
+    def scroll_by(self, dx, dy):
+        """Move what is seen by (dx, dy) pixels: positive shows more of what lies right and below."""
+        self._keep_room()
+        horizontal, vertical = self.horizontalScrollBar(), self.verticalScrollBar()
+        horizontal.setValue(horizontal.value() + round(dx))
+        vertical.setValue(vertical.value() + round(dy))
+
+    def _centre(self):
+        return QtCore.QPointF(self.viewport().rect().center())
+
+    def _to_scene(self, view_point):
+        return self.viewportTransform().inverted()[0].map(QtCore.QPointF(view_point))
+
+    def zoom(self, factor, anchor=None):
+        """Zoom by `factor` toward `anchor`, a point in the view (default its centre). Steps taken while one is
+        still easing add up."""
+        self.zoom_to(self._target * factor, anchor)
+
+    def zoom_to(self, level, anchor=None, smooth=True):
+        """Draw at `level` (1.0 = 100 %, kept within ZOOM_MIN..ZOOM_MAX), the point at `anchor` staying put."""
+        anchor = QtCore.QPointF(anchor) if anchor is not None else self._centre()
+        self._ease(level, anchor, self._to_scene(anchor), smooth)
+
+    def show_area(self, rect, largest=1.0, smooth=True):
+        """`rect` (on the sheet) whole and centred, drawn no larger than `largest`."""
+        view = self.viewport().rect()
+        level = min(view.width() / max(rect.width(), 1.0), view.height() / max(rect.height(), 1.0), largest)
+        self._ease(level, self._centre(), rect.center(), smooth)
+
+    def fit(self, smooth=False):
+        """The whole pipeline in view and centred, never drawn larger than 100 %."""
+        if not self.cards:
+            self._ease(1.0, self._centre(), QtCore.QPointF(0, 0), smooth)
+            return
+        self.show_area(self.scene().itemsBoundingRect().adjusted(-40, -40, 40, 40), 1.0, smooth)
+
+    def zoom_to_selection(self, smooth=True):
+        """The selected blocks whole and centred (at most 150 %); with none selected, the whole pipeline."""
+        chosen = [item for item in self.scene().selectedItems() if isinstance(item, NodeItem)]
+        if not chosen:
+            self.fit(smooth)
+            return
+        box = chosen[0].sceneBoundingRect()
+        for item in chosen[1:]:
+            box = box.united(item.sceneBoundingRect())
+        self.show_area(box.adjusted(-40, -40, 40, 40), 1.5, smooth)
+
+    def first_view(self):
+        """Where a sheet starts once it has a size: as it was left last session, else the whole pipeline."""
+        saved, self.saved_view = self.saved_view, None
+        try:
+            level, x, y = (float(v) for v in saved)
+        except (TypeError, ValueError):
+            self.fit()
+            return
+        self._ease(level, self._centre(), QtCore.QPointF(x, y), smooth=False)
+
+    def view_state(self):
+        """[zoom level, x, y of the view's centre on the sheet], kept with the sheet for the next session."""
+        centre = self._to_scene(self._centre())
+        return [round(self.zoom_level, 4), round(centre.x(), 1), round(centre.y(), 1)]
+
+    def _ease(self, level, anchor, point, smooth):
+        """Draw at `level` with the sheet's `point` at the view's `anchor`: at once, or easing there."""
+        level = min(max(float(level), ZOOM_MIN), ZOOM_MAX)
+        self._target = level
+        self._stop_easing()
+        if not smooth or EASE_MS <= 0 or not self.isVisible():
+            self._place(level, anchor, point)
+            return
+        start_level, start_point = self.zoom_level, self._to_scene(anchor)
+        animation = QtCore.QVariantAnimation(self)
+        animation.setDuration(EASE_MS)
+        animation.setStartValue(0.0)
+        animation.setEndValue(1.0)
+        animation.setEasingCurve(QtCore.QEasingCurve.Type.OutCubic)
+        animation.target = (level, anchor, point)
+
+        def step(t):
+            # the scale moves by equal ratios, so zooming in and back out feel alike
+            self._place(start_level * (level / start_level) ** float(t), anchor,
+                        start_point + (point - start_point) * float(t))
+        animation.valueChanged.connect(step)
+        animation.finished.connect(self.settle)
+        self._easing = animation
+        animation.start()
+
+    def _stop_easing(self):
+        if self._easing is not None:
+            animation, self._easing = self._easing, None
+            animation.stop()
+            animation.deleteLater()
+            return animation.target
+        return None
+
+    def settle(self):
+        """A zoom or fit still easing goes straight to where it was going (before the view is read)."""
+        target = self._stop_easing()
+        if target is not None:
+            self._place(*target)
+
+    def _place(self, level, anchor, point):
+        self.setTransform(QtGui.QTransform.fromScale(level, level))
+        here = self.viewportTransform().map(point)
+        self.scroll_by(here.x() - anchor.x(), here.y() - anchor.y())
+        self.zoom_changed.emit(self.zoom_level)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._keep_room()
+        self._place_zoom_bar()
+
+    def _place_zoom_bar(self):
+        """In the sheet's lower left corner, over it."""
+        self.zoom_bar.adjustSize()
+        self.zoom_bar.move(12, self.height() - self.zoom_bar.height() - 12)
+        self.zoom_bar.raise_()
+
+    # ---------------- background ----------------
 
     def drawBackground(self, painter, rect):
         """Dotted paper (the user's choice, 31 October 2026): a dot every GRID, a stronger one every
@@ -454,26 +654,26 @@ class Canvas(QtWidgets.QGraphicsView):
         painter.restore()
 
     def wheelEvent(self, event):
-        """Ctrl + wheel (a touchpad's pinch arrives as that on Windows) zooms; scrolling moves the sheet."""
+        """Ctrl + wheel (a touchpad's pinch arrives as that on Windows) zooms toward the mouse; scrolling moves
+        the sheet."""
         if event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier:
             steps = event.angleDelta().y() / 120.0
             if steps:
-                self.zoom(1.15 ** steps)
+                self.zoom(ZOOM_STEP ** steps, event.position())
         else:
             # a touchpad gives pixels where it can, a wheel 120 per notch: a notch moves 60 pixels
             delta = event.pixelDelta() if not event.pixelDelta().isNull() else event.angleDelta() / 2
             dx, dy = delta.x(), delta.y()
             if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier and not dx:
                 dx, dy = dy, 0
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - int(dx))
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - int(dy))
+            self.scroll_by(-int(dx), -int(dy))
         event.accept()
 
     def viewportEvent(self, event):
-        # pinch on a touchpad that sends gestures (macOS, some Linux drivers)
+        # pinch on a touchpad that sends gestures (macOS, some Linux drivers): follows the fingers at once
         if event.type() == QtCore.QEvent.Type.NativeGesture and \
                 event.gestureType() == QtCore.Qt.NativeGestureType.ZoomNativeGesture:
-            self.zoom(1.0 + event.value())
+            self.zoom_to(self._target * (1.0 + event.value()), event.position(), smooth=False)
             return True
         return super().viewportEvent(event)
 
@@ -490,12 +690,20 @@ class Canvas(QtWidgets.QGraphicsView):
         area = QtCore.QRect(view_pos - QtCore.QPoint(5, 5), QtCore.QSize(11, 11))
         return self.items(area)
 
+    @staticmethod
+    def drag_mode():
+        """What a plain drag on empty sheet does, as Settings → Interface says: DRAG_PANS or DRAG_SELECTS."""
+        from ..preferences import setting
+        return DRAG_SELECTS if setting("workbench/drag") == DRAG_SELECTS else DRAG_PANS
+
     def mousePressEvent(self, event):
+        self.settle()
         left = event.button() == QtCore.Qt.MouseButton.LeftButton
-        # empty sheet under a plain left press: move around, as a touchpad's click-and-drag would
+        # empty sheet under a plain left press: move around, as a touchpad's click-and-drag would (unless a
+        # plain drag selects, and Space or the middle button moves the sheet)
         empty = left and not (event.modifiers() & (QtCore.Qt.KeyboardModifier.ShiftModifier |
                                                    QtCore.Qt.KeyboardModifier.ControlModifier)) and \
-            not self.items_at(event.position().toPoint())
+            not self.items_at(event.position().toPoint()) and self.drag_mode() == DRAG_PANS
         if event.button() == QtCore.Qt.MouseButton.MiddleButton or (self._space and left) or empty:
             self._pan = event.position().toPoint()
             self._panned = False
@@ -515,15 +723,57 @@ class Canvas(QtWidgets.QGraphicsView):
             delta = event.position().toPoint() - self._pan
             self._pan = event.position().toPoint()
             self._panned = self._panned or not delta.isNull()
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
+            self.scroll_by(-delta.x(), -delta.y())
             return
         if self._drag is not None:
             self.drag_wire_to(self.mapToScene(event.position().toPoint()))
+            self._watch_edge(event)
             return
         super().mouseMoveEvent(event)
+        if self.pressing and self.scene().mouseGrabberItem() is not None:      # a block being dragged
+            self._watch_edge(event)
+
+    # ---------------- the sheet moves along under a drag at its edge ----------------
+
+    def _edge_push(self, pos):
+        """(dx, dy) pixels to move the sheet by in one step: toward the edges the mouse is near, faster the
+        nearer; (0, 0) away from them."""
+        rect = self.viewport().rect()
+
+        def push(distance):
+            return 0.0 if distance >= EDGE else 18.0 * (EDGE - max(distance, 0.0)) / EDGE
+        return (push(rect.right() - pos.x()) - push(pos.x() - rect.left()),
+                push(rect.bottom() - pos.y()) - push(pos.y() - rect.top()))
+
+    def _watch_edge(self, event):
+        self._mouse = (event.position(), event.globalPosition(), event.buttons(), event.modifiers())
+        if any(self._edge_push(event.position())):
+            if not self._edge.isActive():
+                self._edge.start()
+        else:
+            self._edge.stop()
+
+    def _edge_step(self):
+        wire = self._drag is not None
+        dragged = self.pressing and self.scene().mouseGrabberItem() is not None
+        dx, dy = self._edge_push(self._mouse[0]) if self._mouse is not None else (0, 0)
+        if not (wire or dragged) or not (dx or dy):
+            self._edge.stop()
+            return
+        position, screen, buttons, keys = self._mouse
+        self.scroll_by(dx, dy)
+        if wire:
+            self.drag_wire_to(self.mapToScene(position.toPoint()))
+        else:
+            # the mouse stays where it is while the sheet moves under it: the block follows the sheet's new
+            # point under the mouse, as if the mouse had moved
+            move = QtGui.QMouseEvent(QtCore.QEvent.Type.MouseMove, position, screen,
+                                     QtCore.Qt.MouseButton.NoButton, buttons, keys)
+            QtWidgets.QGraphicsView.mouseMoveEvent(self, move)
 
     def mouseReleaseEvent(self, event):
+        self._edge.stop()
+        self._mouse = None
         if self._pan is not None:
             self._pan = None
             self.unsetCursor()
@@ -581,12 +831,16 @@ class Canvas(QtWidgets.QGraphicsView):
         elif event.key() == QtCore.Qt.Key.Key_Space and not event.isAutoRepeat():
             self._space = True
             self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        elif event.key() == QtCore.Qt.Key.Key_F and not event.modifiers():
-            self.fit()
+        elif event.key() in (QtCore.Qt.Key.Key_F, QtCore.Qt.Key.Key_1) and not event.modifiers():
+            self.fit(smooth=True)
+        elif event.key() == QtCore.Qt.Key.Key_0 and not event.modifiers():
+            self.zoom_to(1.0)
+        elif event.key() == QtCore.Qt.Key.Key_2 and not event.modifiers():
+            self.zoom_to_selection()
         elif event.key() in (QtCore.Qt.Key.Key_Plus, QtCore.Qt.Key.Key_Equal):
-            self.zoom(1.15)
+            self.zoom(ZOOM_STEP)
         elif event.key() == QtCore.Qt.Key.Key_Minus:
-            self.zoom(1 / 1.15)
+            self.zoom(1 / ZOOM_STEP)
         else:
             super().keyPressEvent(event)
 
@@ -608,7 +862,7 @@ class Canvas(QtWidgets.QGraphicsView):
             menu.addSeparator()
             menu.addAction("Delete", self.delete_selected)
         else:
-            menu.addAction("Fit to window   F", self.fit)
+            add_view_actions(menu, self)
         menu.exec(event.globalPos())
 
     def duplicate(self, node_id):
