@@ -25,5 +25,6 @@ data_local/
 *.eeg
 !tests/data/**
 
-# test scratch
+# test scratch, and what the validation scripts write
 tests/.tmp/
+validation-output/

@@ -1,4 +1,4 @@
-"""GIOVA 3.1's views: band power drawn, not only listed; the run trace as agreed; the logo's size.
+"""GIOVA's views: band power drawn, not only listed; the run trace as agreed; the logo's size.
 
 Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """

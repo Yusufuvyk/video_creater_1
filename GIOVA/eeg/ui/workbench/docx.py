@@ -11,6 +11,8 @@ import re
 from xml.sax.saxutils import escape
 import zipfile
 
+from ... import NAME, VERSION
+
 #: A4 with 2 cm margins, in twentieths of a point (twips); the text width in EMU (914400 per inch).
 PAGE_W, PAGE_H, MARGIN = 11906, 16838, 1134
 TEXT_WIDTH_EMU = (PAGE_W - 2 * MARGIN) * 635
@@ -41,7 +43,7 @@ PACKAGE_RELS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 CORE = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">
-<dc:title>{}</dc:title><dc:creator>GIOVA 3.1</dc:creator>
+<dc:title>{}</dc:title><dc:creator>{}</dc:creator>
 </cp:coreProperties>"""
 
 
@@ -155,7 +157,7 @@ def write_docx(path, title, parts, images):
     with zipfile.ZipFile(str(path), "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("[Content_Types].xml", CONTENT_TYPES)
         archive.writestr("_rels/.rels", PACKAGE_RELS)
-        archive.writestr("docProps/core.xml", CORE.format(_text(title)))
+        archive.writestr("docProps/core.xml", CORE.format(_text(title), _text("{} {}".format(NAME, VERSION))))
         archive.writestr("word/document.xml", document)
         archive.writestr("word/styles.xml", STYLES)
         archive.writestr("word/_rels/document.xml.rels",

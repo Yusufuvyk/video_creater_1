@@ -20,6 +20,7 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
+from ... import NAME, VERSION
 from ...pipeline import block
 from ...pipeline.batch import score_nodes
 from ...pipeline import provenance
@@ -390,8 +391,8 @@ def _pipeline_report(graph, outputs, canvas=None):
     """The report of one pipeline's run: `outputs` as `WorkbenchPage.outputs()` gives them."""
     report = Report(graph.name)
     files = sorted({graph.params(n)["path"] for n in graph.sources("load") if graph.params(n)["path"]})
-    report.paragraph("{} · GIOVA 3.1 · {}".format(datetime.now().strftime("%d %B %Y, %H:%M"),
-                                                  ", ".join(files) or "no recording"), note=True)
+    report.paragraph("{} · {} {} · {}".format(datetime.now().strftime("%d %B %Y, %H:%M"), NAME, VERSION,
+                                             ", ".join(files) or "no recording"), note=True)
     if graph.description:
         report.paragraph(graph.description)
     _profile(report, graph)
@@ -570,8 +571,8 @@ ACROSS_METHODS = ("Leave one recording out: each recording tested with the model
 
 def _comparison_report(result, graphs, recordings_note=""):
     report = Report("Comparison: " + ", ".join(g.name for g in graphs))
-    report.paragraph("{} · GIOVA 3.1 · {} recordings{}".format(
-        datetime.now().strftime("%d %B %Y, %H:%M"), len(result.subjects),
+    report.paragraph("{} · {} {} · {} recordings{}".format(
+        datetime.now().strftime("%d %B %Y, %H:%M"), NAME, VERSION, len(result.subjects),
         " · " + recordings_note if recordings_note else ""), note=True)
     if result.evaluation == "across":
         report.paragraph("Each recording was tested with a model trained on all the other recordings (leave one "

@@ -9,6 +9,8 @@ import numpy as np
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "validation-output"
+OUT.mkdir(exist_ok=True)
 sys.path.insert(0, str(ROOT))
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, QtGui
@@ -67,12 +69,12 @@ for mode in ("unthrottled_shared_scale", "optimized_per_channel"):
     results[mode] = dict(mean_frame_ms=float(np.mean(durations[10:])),
                          p95_frame_ms=float(np.percentile(durations[10:], 95)))
     if mode == "optimized_per_channel":
-        page.grab().save(str(ROOT/"validation-output"/"monitor-independent-scales.png"))
+        page.grab().save(str(OUT / "monitor-independent-scales.png"))
     page.stop()
     page.close()
     app.processEvents()
 results["context"] = ("Offscreen Qt, 16 synthetic channels, 125 Hz, 10 s display, live features open, 160 simulated "
                       "ticks. CPU/render-loop cost, not hardware FPS. Baseline recreates unthrottled shared-scale "
                       "work on the same layout.")
-(ROOT/"validation-output"/"monitor-performance.json").write_text(json.dumps(results, indent=2))
+(OUT / "monitor-performance.json").write_text(json.dumps(results, indent=2))
 print(json.dumps(results, indent=2))

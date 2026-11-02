@@ -63,7 +63,7 @@ FIF, BrainVision and EEGLAB.
 
 ## Checked, not assumed
 
-- **Over 600 automated tests** run before every build, and the packaged program checks itself (`GIOVA.exe --selftest`).
+- **Over 640 automated tests** run on Windows and Linux for every change and before every build, and the packaged program checks itself (`GIOVA.exe --selftest`).
 - **Against the reference libraries.** CSP, LDA and every classifier give the same predictions as MNE and
   scikit-learn on the same folds; tuning picks the same values as scikit-learn's `GridSearchCV`.
 - **On real data.** On the 52 subjects of the Cho2017 motor imagery dataset, CSP + LDA averaged 65.3%,
@@ -99,6 +99,17 @@ python -m venv .venv
 
 `build_exe.bat` runs the tests, builds `dist\GIOVA\GIOVA.exe` with PyInstaller, runs its self-test and zips
 it for release. `requirements-lock.txt` pins every package to the versions the release was tested with.
+
+## Contributing
+
+Problems and ideas are welcome as [issues](https://github.com/OWNER/GIOVA/issues) (Help → Send feedback opens
+one with the version filled in). A change comes with a test, and passes these two, as CI checks on Windows and
+Linux:
+
+```bash
+.venv\Scripts\python -m unittest discover -s tests
+.venv\Scripts\ruff check .
+```
 
 ## How it is built
 
