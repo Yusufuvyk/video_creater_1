@@ -1,6 +1,6 @@
 """The second outside review (24 October 2026), R1-R9: one test each.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

@@ -1,6 +1,6 @@
 """Channels powered down on the board carry no EEG: kept out of results.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

@@ -5,7 +5,7 @@ MATLAB objects that are not read; and every automatic step - layout, runs and ch
 trials left out - in the Recording's notes, the pipeline report and the comparison report. The MATLAB files
 in tests/data/matlab were written by MATLAB R2025b (make_fixture.m, make_eeglab.m).
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import importlib.util
 import os

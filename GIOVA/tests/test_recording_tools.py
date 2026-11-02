@@ -1,7 +1,7 @@
 """What a recording says about its units, events renamed and moved, motion, bad channels, and the
 previews' every-channel grid and channel means.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

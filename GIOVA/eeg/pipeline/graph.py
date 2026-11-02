@@ -418,6 +418,10 @@ def _name(graph, node_id, port):
 # ----------------------------------------------------------------------
 
 
+#: What a cache lookup gives for a key it does not hold (a block's outputs are never this).
+_MISSING = object()
+
+
 class Stopped(Exception):
     """A run stopped on request: the blocks finished before keep their outputs."""
 
@@ -482,12 +486,15 @@ class Runner:
                 key = _key(kind, params, {name: self.keys[w.source] for name, w in feeds.items()})
             except (OSError, TypeError, ValueError) as exc:
                 raise PipelineError(node_id, str(exc)) from exc
-            if key not in self.cache:
+            # Read once and keep it here: a cache shared with other runs (the Workbench's sheets) may drop the
+            # entry from another thread at any moment, so it is never looked up a second time.
+            outputs = self.cache.get(key, _MISSING)
+            if outputs is _MISSING:
                 inputs = {name: results[w.source][w.output] for name, w in feeds.items()}
                 context.node = node_id
                 context.progress(node.label or kind.title)
                 try:
-                    self.cache[key] = kind.run(inputs, params, context)
+                    outputs = kind.run(inputs, params, context)
                 except (PipelineError, Stopped):
                     raise
                 except (ValueError, KeyError, IndexError, ArithmeticError, OSError, MemoryError) as exc:
@@ -496,8 +503,9 @@ class Runner:
                     # anything else still belongs to this block: marked on it, not only in the status line
                     raise PipelineError(node_id, "{}: {}: {}".format(node.label or kind.title, type(exc).__name__,
                                                                      exc)) from exc
+                self.cache[key] = outputs
             self.keys[node_id] = key
-            results[node_id] = self.cache[key]
+            results[node_id] = outputs
         return results
 
     def forget(self):

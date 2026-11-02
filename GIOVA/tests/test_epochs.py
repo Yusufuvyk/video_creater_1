@@ -1,6 +1,6 @@
 """Units, ROI, filters, profiles, events, loaders and the Epoch / ERD page.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import json
 import os
@@ -359,6 +359,14 @@ class LoaderTests(unittest.TestCase):
             self.assertAlmostEqual(float(np.abs(recording.data).max()), 20.0, places=3)
             self.assertEqual(recording.events.labels, ["769", "770", "769"])
             np.testing.assert_allclose(recording.events.onsets, [2, 6, 10])
+            # a bad mark written in lower case is still a bad mark, not an event (as MNE reads it)
+            raw.set_annotations(mne.Annotations([2.0, 14.0], [4, 1], ["769", "bad_motion"]))
+            lower = directory / "lower_raw.fif"
+            raw.save(lower, overwrite=True)
+            marked = load_recording(lower)
+            self.assertEqual(marked.events.labels, ["769"])
+            self.assertEqual([label for _, _, label in marked.bad_spans], ["bad_motion"])
+            raw.set_annotations(mne.Annotations([2.0, 6.0, 10.0, 14.0], [4, 4, 4, 1], ["769", "770", "769", "BAD_blink"]))
             ep.save_label_map(path, {"769": "left", "770": "right"})
             self.assertEqual(ep.events_for(recording, path)[0].labels, ["left", "right", "left"])
             epochs = mne.Epochs(raw, np.array([[320, 0, 1], [960, 0, 2]]), dict(left=1, right=2),

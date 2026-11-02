@@ -8,7 +8,7 @@ pipeline.bundle, so nearly everything is bitwise equal; the exception is a
 model step the script takes from scikit-learn (LDA, the scaler) where EEG
 Studio has its own, which agree to about 1e-15.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import inspect
 import json

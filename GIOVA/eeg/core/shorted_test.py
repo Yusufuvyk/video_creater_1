@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .hardware import CHANNEL_CHARS
+from .monitoring import MAINS_HZ, mains_bands
 from .spectral import band_integral, welch_psd
 
 SETTLE_SECONDS = 1.5
@@ -33,15 +34,18 @@ class Result:
     mains_uv: float
     mains_ratio: float
     status: str
+    #: the mains frequency `mains_uv` and `mains_ratio` were measured at
+    mains_hz: float = MAINS_HZ
 
 
-def analyse(samples_uv, fs):
-    """Return per-channel DC, centred noise RMS and 50 Hz power measurements.
+def analyse(samples_uv, fs, mains=MAINS_HZ):
+    """Return per-channel DC, centred noise RMS and mains (`mains` Hz) power measurements.
 
     ``status`` is an intentionally conservative screening aid, not an ADS1299
-    production-test limit.  A tiny absolute 50 Hz component is accepted even
+    production-test limit.  A tiny absolute mains component is accepted even
     when its percentage is unstable because the total noise is nearly zero.
     """
+    (line_low, line_high), (total_low, total_high) = mains_bands(mains)
     data = np.atleast_2d(np.asarray(samples_uv, dtype=float))
     if data.ndim != 2 or data.shape[1] < round(float(fs)):
         raise ValueError("not enough internal-short samples")
@@ -50,29 +54,30 @@ def analyse(samples_uv, fs):
         finite = row[np.isfinite(row)]
         if finite.size != row.size:
             results.append(Result(channel, float("nan"), float("nan"),
-                                  float("nan"), float("nan"), "Missing samples"))
+                                  float("nan"), float("nan"), "Missing samples", float(mains)))
             continue
         mean = float(np.mean(row))
         noise = float(np.std(row - mean))
         freqs, psd = welch_psd(row, fs, detrend="linear")
-        high = min(60.0, float(fs) / 2)
-        total = float(band_integral(freqs, psd, 1.0, high))
-        line_power = (float(band_integral(freqs, psd, 49.0, min(51.0, high)))
-                      if high > 49 else float("nan"))
-        mains = float(np.sqrt(max(line_power, 0.0))) if np.isfinite(line_power) else float("nan")
+        nyquist = float(fs) / 2
+        total = float(band_integral(freqs, psd, total_low, min(total_high, nyquist)))
+        line_power = (float(band_integral(freqs, psd, line_low, min(line_high, nyquist)))
+                      if nyquist > line_low else float("nan"))
+        mains_uv = float(np.sqrt(max(line_power, 0.0))) if np.isfinite(line_power) else float("nan")
         ratio = line_power / total if total > 1e-20 and np.isfinite(line_power) else float("nan")
-        clean_mains = not np.isfinite(ratio) or ratio <= 0.20 or mains <= 0.5
+        clean_mains = not np.isfinite(ratio) or ratio <= 0.20 or mains_uv <= 0.5
         status = "Clean" if abs(mean) <= 50.0 and noise <= 5.0 and clean_mains else "Check"
-        results.append(Result(channel, mean, noise, mains, ratio, status))
+        results.append(Result(channel, mean, noise, mains_uv, ratio, status, float(mains)))
     return results
 
 
 class Capture:
     """Collect settling plus a fixed-length raw internal-short recording."""
 
-    def __init__(self, channels, fs, settle=SETTLE_SECONDS, measure=MEASURE_SECONDS):
+    def __init__(self, channels, fs, settle=SETTLE_SECONDS, measure=MEASURE_SECONDS, mains=MAINS_HZ):
         self.channels = list(channels)
         self.fs = float(fs)
+        self.mains = float(mains)
         self.settle = int(round(settle * fs))
         self.measure = int(round(measure * fs))
         self.seen = 0
@@ -93,7 +98,7 @@ class Capture:
         if sum(part.shape[1] for part in self.parts) < self.measure:
             return False
         data = np.concatenate(self.parts, axis=1)[:, :self.measure]
-        all_results = analyse(data, self.fs)
+        all_results = analyse(data, self.fs, self.mains)
         wanted = set(self.channels)
         self.results = [result for result in all_results if result.channel in wanted]
         return True
@@ -101,8 +106,8 @@ class Capture:
 
 def summary(results, names):
     return ", ".join(
-        "{} {}: mean {:+.2f} uV, noise {:.2f} uV RMS, 50 Hz {:.1f}%".format(
-            names[r.channel], r.status, r.mean_uv, r.noise_uv,
+        "{} {}: mean {:+.2f} uV, noise {:.2f} uV RMS, {:g} Hz {:.1f}%".format(
+            names[r.channel], r.status, r.mean_uv, r.noise_uv, r.mains_hz,
             100 * r.mains_ratio if np.isfinite(r.mains_ratio) else float("nan"))
         for r in results)
 
@@ -124,15 +129,15 @@ def summary_html(results, names):
         details.append("worst noise <b>{}</b> {:.2f} µV RMS".format(
             names[worst_noise.channel], worst_noise.noise_uv))
     if worst_mains is not None:
-        details.append("worst 50 Hz <b>{}</b> {:.1f}%".format(
-            names[worst_mains.channel], 100 * worst_mains.mains_ratio))
+        details.append("worst {:g} Hz <b>{}</b> {:.1f}%".format(
+            worst_mains.mains_hz, names[worst_mains.channel], 100 * worst_mains.mains_ratio))
     rows = [header + (" · " + " · ".join(details) if details else "")]
     # Keep the 300 px settings panel usable: clean channels are represented by
     # the aggregate above; only channels needing attention get their own row.
     for r in (item for item in results if item.status != "Clean"):
         ratio = "—" if not np.isfinite(r.mains_ratio) else "{:.1f}%".format(100 * r.mains_ratio)
         rows.append('<span style="color:{}">● <b>{}</b> {} · mean {:+.2f} µV · '
-                    'noise {:.2f} µV RMS · 50 Hz {}</span>'.format(
+                    'noise {:.2f} µV RMS · {:g} Hz {}</span>'.format(
                         colour[r.status], names[r.channel], r.status,
-                        r.mean_uv, r.noise_uv, ratio))
+                        r.mean_uv, r.noise_uv, r.mains_hz, ratio))
     return "<br>".join(rows)

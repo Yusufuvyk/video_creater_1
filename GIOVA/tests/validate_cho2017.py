@@ -4,7 +4,7 @@ Writes validation-output/cho2017_compare.csv (accuracy and ROC AUC per subject
 and pipeline) and prints the summary and the paired comparison. Takes about a
 minute per subject.
 
-Run: .venv/Scripts/python eegstudio/tests/validate_cho2017.py [folder with s01.mat ...] [--subjects 5]
+Run: .venv/Scripts/python tests/validate_cho2017.py [folder with s01.mat ...] [--subjects 5]
 """
 import argparse
 from pathlib import Path

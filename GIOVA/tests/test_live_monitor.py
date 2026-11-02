@@ -83,6 +83,18 @@ class Measurements(unittest.TestCase):
         self.assertTrue(np.isnan(result['fft'][2]).all())
         self.assertTrue(np.isfinite(result['fft'][:2]).all())
 
+    def test_line_noise_is_measured_at_the_mains_chosen(self):
+        # 60 Hz hum (the Americas, Korea, Japan) is line noise when the mains is 60 Hz, and only then.
+        hum = (sine(60, 30) + sine(11))[None]
+        self.assertEqual(quality_snapshot(hum, 125, 4, 187500, mains=60.0)[0].status, 'Line noise')
+        self.assertGreater(quality_snapshot(hum, 125, 4, 187500, mains=60.0)[0].mains, .8)
+        self.assertEqual(quality_snapshot(hum, 125, 4, 187500)[0].status, 'No issues detected')
+        from eeg.core import shorted_test
+        shorted = np.vstack([10 * sine(60, 1, 20), np.zeros(2500)]) + np.random.default_rng(1).normal(0, .1, 2500)
+        results = shorted_test.analyse(shorted, 125, mains=60.0)
+        self.assertEqual([r.status for r in results], ['Check', 'Clean'])
+        self.assertIn('60 Hz', shorted_test.summary(results, ['O1', 'O2']))
+
     def test_low_rate_mains_unavailable_and_adjustable_thresholds(self):
         result = quality_snapshot(sine(fs=80)[None], 80, 4, limits=QualityLimits(high_uv=1))
         self.assertTrue(np.isnan(result[0].mains))
@@ -112,6 +124,7 @@ class LiveUi(unittest.TestCase):
         self.app.processEvents()
 
     def flush(self):
+        self.page.board_pool.waitForDone(5000)            # connecting and board commands
         QtCore.QThreadPool.globalInstance().waitForDone(5000)
         self.app.processEvents()
 

@@ -1,4 +1,4 @@
-"""Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -v"""
+"""Run: .venv/Scripts/python -m unittest discover -s tests -v"""
 import csv
 import json
 import os

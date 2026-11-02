@@ -555,13 +555,6 @@ def epoch_band_erd(tfr, band, epochs, pooled=True, **kwargs):
                        axis=0) if pooled else np.nanmean(curves, axis=0))
     return grid, mean, sem, n
 
-# ----------------------------------------------------------------------
-# features
-# ----------------------------------------------------------------------
-
-
-from .spectral import hjorth, spectral_entropy
-
 
 # ----------------------------------------------------------------------
 # display helpers

@@ -6,10 +6,9 @@ import math
 import time
 
 import numpy as np
-from scipy.signal import (butter, iirnotch, sosfilt, sosfilt_zi, sosfiltfilt,
-                          tf2sos, welch)
+from scipy.signal import butter, iirnotch, sosfilt, sosfilt_zi, sosfiltfilt, tf2sos
 
-from .config import BANDS, NYQUIST, RAIL_UV
+from .config import BANDS, RAIL_UV
 from .spectral import welch_psd, band_integral
 
 # ----------------------------------------------------------------------
@@ -20,9 +19,10 @@ from .spectral import welch_psd, band_integral
 def design_filter(fs, low=None, high=None, order=4, notches=(), notch_q=30.0):
     """Combine notch and band filters into one SOS chain.
 
-    Frequencies at or above Nyquist are silently dropped - at 125 Hz the
-    100 Hz mains harmonic simply cannot be represented, and refusing to
-    build the whole chain over that would be unhelpful.
+    Notches at or above Nyquist are silently dropped - at 125 Hz the 100 Hz
+    mains harmonic simply cannot be represented, and refusing to build the
+    whole chain over that would be unhelpful. A low or high cut outside
+    (0, Nyquist), or a low cut above the high one, raises ValueError.
 
     Returns None when nothing is enabled.
     """

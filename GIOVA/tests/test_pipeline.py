@@ -4,7 +4,7 @@ CSP, LDA and Ledoit-Wolf are checked against MNE and scikit-learn when those are
 installed (development only; the program does not need them). The Cho2017 test
 runs when the dataset is on this computer.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

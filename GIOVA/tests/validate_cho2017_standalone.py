@@ -7,7 +7,7 @@ accuracy and every tested trial's predicted condition (exactly), and every
 trial's classifier score (largest difference reported). Writes
 validation-output/cho2017_standalone.csv. Takes about a minute per subject.
 
-Run: .venv/Scripts/python eegstudio/tests/validate_cho2017_standalone.py [folder] [--subjects 5]
+Run: .venv/Scripts/python tests/validate_cho2017_standalone.py [folder] [--subjects 5]
 """
 import argparse
 import csv

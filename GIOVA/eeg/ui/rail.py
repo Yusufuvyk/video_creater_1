@@ -8,7 +8,7 @@ shortcut are in the tooltip, the one in use is drawn in the accent colour.
 One panel is open at a time, beside the rail. A click on the open panel's icon folds it away; which
 panel each mode had open is remembered.
 """
-from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
+from pyqtgraph.Qt import QtCore, QtWidgets
 
 from .icons import icon
 from .theme import color

@@ -1,6 +1,6 @@
 """SSVEP helpers: neighbour-bin SNR and the condition contrast view.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

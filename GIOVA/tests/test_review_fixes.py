@@ -1,7 +1,7 @@
 """Regressions for the 23 October 2026 software review (B1-B6).
 
 Each test failed on the code the review looked at.
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

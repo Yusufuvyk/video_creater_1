@@ -6,9 +6,10 @@ Channel quality, per channel, over the last 4 s of raw samples:
               Band-limited on purpose - raw RMS is mostly electrode drift and
               mains, which the display filters remove, so it flagged channels
               whose on-screen EEG was fine.
-  mains       49-51 Hz power / 1-60 Hz power. Reported as its own status,
-              because a notch filter removes it and it says "cable/room
-              pick-up", not "no EEG".
+  mains       power within 1 Hz of the mains frequency / 1 Hz to 10 Hz above
+              it (50 Hz: 49-51 / 1-60 Hz; 60 Hz: 59-61 / 1-70 Hz). Reported as
+              its own status, because a notch filter removes it and it says
+              "cable/room pick-up", not "no EEG".
   saturation  share of samples within 5% of the Cyton rail (±187,500 µV).
 
   same_as     another channel carrying the same waveform and offset, or -1.
@@ -57,7 +58,18 @@ class ChannelQuality:
     same_as: int = -1
 
 
-def quality_snapshot(raw, fs, data_time, rail_uv=None, limits=QualityLimits()):
+#: The mains frequency the line-noise share is measured at, unless told otherwise (Europe; 60 in the Americas).
+MAINS_HZ = 50.0
+
+
+def mains_bands(mains=MAINS_HZ):
+    """((low, high) of the mains line, (low, high) of the total it is a share of), in Hz."""
+    mains = float(mains)
+    return (mains - 1.0, mains + 1.0), (1.0, mains + 10.0)
+
+
+def quality_snapshot(raw, fs, data_time, rail_uv=None, limits=QualityLimits(), mains=MAINS_HZ):
+    """One ChannelQuality per row of `raw` (µV, the last 4 s), the line noise measured at `mains` Hz."""
     raw = np.asarray(raw, dtype=float)
     if raw.shape[1] < round(4 * fs):
         return [ChannelQuality(i, 'Collecting data', data_time=data_time)
@@ -68,10 +80,12 @@ def quality_snapshot(raw, fs, data_time, rail_uv=None, limits=QualityLimits()):
     # Linear detrend per segment: a dry electrode's offset ramps by millivolts
     # per second, and a mean-only detrend leaks that ramp into 1-3 Hz.
     f, psd = welch_psd(np.where(finite[:, None], raw, 0.0), fs, detrend="linear")
-    totals = np.atleast_1d(band_integral(f, psd, 1, min(60, fs / 2)))
+    (line_low, line_high), (total_low, total_high) = mains_bands(mains)
+    measurable = fs / 2 > line_low
+    totals = np.atleast_1d(band_integral(f, psd, total_low, min(total_high, fs / 2)))
     eeg_power = np.atleast_1d(band_integral(f, psd, EEG_BAND[0], min(EEG_BAND[1], fs / 2)))
-    line = (np.atleast_1d(band_integral(f, psd, 49, min(51, fs / 2)))
-            if fs / 2 > 49 else np.full(len(raw), np.nan))
+    line = (np.atleast_1d(band_integral(f, psd, line_low, min(line_high, fs / 2)))
+            if measurable else np.full(len(raw), np.nan))
     partners = identical_partners(raw, finite, fs)
     result = []
     for i, row in enumerate(raw):
@@ -81,15 +95,14 @@ def quality_snapshot(raw, fs, data_time, rail_uv=None, limits=QualityLimits()):
         rms = float(np.sqrt(max(eeg_power[i], 0.0)))
         sat = float(np.mean(np.abs(row) > .95 * rail_uv)) if rail_uv else float('nan')
         total = float(totals[i])
-        mains = (float(line[i]) / total
-                 if fs / 2 > 49 and total > 1e-20 else float('nan'))
+        share = float(line[i]) / total if measurable and total > 1e-20 else float('nan')
         status = ('Saturated' if sat > limits.saturation_ratio else
                   'Flat' if rms < limits.flat_uv else
                   'Check signal' if rms > limits.high_uv else
                   'Identical signal' if partners[i] >= 0 else
-                  'Line noise' if mains > limits.mains_ratio else
+                  'Line noise' if share > limits.mains_ratio else
                   'No issues detected')
-        result.append(ChannelQuality(i, status, rms, sat, mains, data_time,
+        result.append(ChannelQuality(i, status, rms, sat, share, data_time,
                                      int(partners[i]) if status == 'Identical signal' else -1))
     return result
 

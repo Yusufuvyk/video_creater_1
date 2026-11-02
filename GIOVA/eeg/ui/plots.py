@@ -9,7 +9,7 @@ from pyqtgraph.Qt import QtCore, QtWidgets
 from ..core.config import BANDS
 from ..core.processing import decimate_minmax
 from .theme import color
-from .icons import only, put
+from .icons import only
 
 #: One trace on its own (a filtered signal, a filter's response): at least 3.4:1 on white and on the
 #: dark plot background alike, so it reads in the window and in a report.

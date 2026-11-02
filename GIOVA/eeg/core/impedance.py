@@ -30,7 +30,7 @@ alternately sourced and sunk, i.e. a square wave, and Daisy mode samples at
 125 Hz): good for telling touching / poor / open apart, not a certified value.
 
 Colour limits and where they come from (no published standard exists for
-passive dry electrodes; see README "Impedance check" for the sources):
+passive dry electrodes; Help → "Impedance check" gives the sources):
   green  < 750 kOhm, yellow < 2500 kOhm, red above - the OpenBCI GUI defaults
          (CytonElectrodeStatus.pde), which use this same lead-off measurement
          on this same board, so the numbers are directly comparable.

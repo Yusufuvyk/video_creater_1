@@ -6,7 +6,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 from .plots import CHANNEL_COLORS, channel_pen, value_axis
 from .widgets import NoScrollComboBox, NoScrollSpinBox, WrapRow
-from ..core.monitoring import MOVEMENT_MG, movement_mg
+from ..core.monitoring import MAINS_HZ, MOVEMENT_MG, mains_bands, movement_mg
 from ..core.spectral import PSD_UNITS, line_frequencies, neighbour_snr, psd_in_unit
 from .preferences import psd_unit, user_settings
 from .scaling import HeldScale
@@ -69,21 +69,21 @@ class QualityTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super().__init__(0, 5)
-        self.setHorizontalHeaderLabels(['Channel', 'Status', 'EEG µV', 'Rail %', '50 Hz %'])
+        self.setHorizontalHeaderLabels(['Channel', 'Status', 'EEG µV', 'Rail %', ''])
         for col, tip in enumerate([
                 'Click a channel for its spectrum.',
                 'Saturated: >15% of samples at the rail · Flat: EEG µV < 0.1 · '
                 'Check signal: EEG µV > 100 · Identical signal: same waveform and offset as another '
-                'channel (electrodes not touching the head, or bridged) · Line noise: 50 Hz % > 20. '
+                'channel (electrodes not touching the head, or bridged) · Line noise: mains % > 20. '
                 'Thresholds in Settings.',
                 'RMS of the 1–45 Hz band (last 4 s, raw data, linear drift removed). '
                 'Awake scalp EEG is typically tens of µV; above ~100 µV is usually artefact.',
                 'Share of samples within 5% of the amplifier rail (Cyton ±187,500 µV, '
                 'Unicorn ±750,000 µV). '
-                'A railed channel has no usable signal: the electrode is not on skin.',
-                '49–51 Hz power as a share of 1–60 Hz power. Mains pick-up from cables '
-                'or poor contact; the notch filter removes it from the display.']):
+                'A railed channel has no usable signal: the electrode is not on skin.']):
             self.horizontalHeaderItem(col).setToolTip(tip)
+        self._mains = None
+        self.set_mains(MAINS_HZ)
         self.verticalHeader().hide()
         self.verticalHeader().setDefaultSectionSize(27)
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -99,6 +99,18 @@ class QualityTable(QtWidgets.QTableWidget):
         self._names = None
         self.setToolTip('Quality uses the last 4 s of raw data, before display filters. '
                         'RMS is mean-removed. These are signal checks, not impedance measurements.')
+
+    def set_mains(self, hz):
+        """The last column measures the line noise at `hz` (the filters' Mains: 50 or 60 Hz)."""
+        if hz == self._mains:
+            return
+        self._mains = hz
+        (low, high), (total_low, total_high) = mains_bands(hz)
+        item = self.horizontalHeaderItem(4)
+        item.setText('{:g} Hz %'.format(hz))
+        item.setToolTip('{:g}–{:g} Hz power as a share of {:g}–{:g} Hz power. Mains pick-up from cables '
+                        'or poor contact; the notch filter removes it from the display. 50 or 60 Hz follows '
+                        'the Mains chosen in the filters.'.format(low, high, total_low, total_high))
 
     def set_channels(self, names):
         if tuple(names) == self._names:

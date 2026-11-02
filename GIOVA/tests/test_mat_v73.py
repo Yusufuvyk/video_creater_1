@@ -8,7 +8,7 @@ BNCI-like cell array of runs, and a MATLAB string and table (named, not read). m
 writes an EEGLAB dataset as v7 and v7.3 .set files. Read with scipy (v7) and with GIOVA's h5py reader
 (v7.3), every value must match.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import builtins
 import os

@@ -11,6 +11,13 @@ set PY=.venv\Scripts\python.exe
 rem Tests first: do not package a build that fails them.
 %PY% -m unittest discover -s tests -p "test_*.py" || goto :fail
 
+rem The eeg folder travels into the exe whole (--add-data below). GIOVA 1.0.0 run from source
+rem recorded into eeg\Data when the project had no Data folder: never package recordings.
+if exist eeg\Data (
+  echo eeg\Data holds recordings: move it to the project folder ^(GIOVA\Data^) before building.
+  goto :fail
+)
+
 rem Exe icon: GIOVA's .ico (eeg\ui\assets\giova.ico).
 if not exist build_icon mkdir build_icon
 %PY% eeg_studio.py --icon build_icon\giova.ico || goto :fail

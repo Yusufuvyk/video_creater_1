@@ -917,11 +917,13 @@ class Scores:
 
 
 def cross_validate(x, labels, model, n_folds=5, seed=42, ids=None, folds=None, scheme=KFOLD, repeats=5,
-                   train_fraction=0.8, permutations=0, progress=None):
+                   train_fraction=0.8, permutations=0, progress=None, limits=True):
     """Scores of `model`. `folds` (test indices) overrides the split; trials are in recording order.
 
     `permutations` > 0 also runs the whole cross-validation that many times with the labels shuffled
     (Ojala & Garriga, 2010): p is the share of shuffles that score at least as well as the real labels.
+    `limits` False leaves out the random classifier's limits (NaN), which take up to 30 000 simulated
+    shuffles: a permutation run is read for its accuracy alone.
     """
     x = np.asarray(x, dtype=float)
     labels = np.asarray([str(label) for label in labels])
@@ -961,12 +963,16 @@ def cross_validate(x, labels, model, n_folds=5, seed=42, ids=None, folds=None, s
     tested_labels = labels[np.concatenate(first_round)]
     chance = max(counts.values()) / len(labels)
     order = {trial: k for k, trial in enumerate(ids)}
+    if limits:
+        limit_05, limit_01 = random_limit(tested_labels, 0.05), random_limit(tested_labels, 0.01)
+        limit_balanced = balanced_limit(tested_labels)
+    else:
+        limit_05 = limit_01 = limit_balanced = float("nan")
     scores = Scores(classes, counts, accuracy, auc, confusion, sorted(predictions, key=lambda r: order[r[0]]),
-                    model.describe(), len(first_round), seed, chance, random_limit(tested_labels, 0.05),
-                    random_limit(tested_labels, 0.01), fold_balanced=balanced,
+                    model.describe(), len(first_round), seed, chance, limit_05, limit_01, fold_balanced=balanced,
                     scheme=scheme if folds is None else KFOLD,
                     repeats=int(repeats) if scheme == REPEATED and folds is None else 1, chosen=chosen,
-                    balanced_limit=balanced_limit(tested_labels), fold_kappa=kappa, fold_f1=f1)
+                    balanced_limit=limit_balanced, fold_kappa=kappa, fold_f1=f1)
     if permutations:
         rng = np.random.default_rng(seed)
         better = 0
@@ -982,7 +988,8 @@ def cross_validate(x, labels, model, n_folds=5, seed=42, ids=None, folds=None, s
                         break
                     except ValueError:
                         shuffled = rng.permutation(labels)
-            other = cross_validate(x, shuffled, model, n_folds, seed, ids, folds, scheme, repeats, train_fraction)
+            other = cross_validate(x, shuffled, model, n_folds, seed, ids, folds, scheme, repeats, train_fraction,
+                                   limits=False)
             better += other.accuracy >= scores.accuracy
         scores.permutations = int(permutations)
         scores.permutation_p = (better + 1) / (int(permutations) + 1)

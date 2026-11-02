@@ -410,7 +410,7 @@ def use_light_theme(app):
 
 
 def main(splash=None):
-    """Run the app. Entry points put the BioTrace start-up screen up before importing
+    """Run the app. Entry points put the start-up screen up before importing
     this module (its imports are most of the start-up time) and pass it in."""
     from .splash import app_icon
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)

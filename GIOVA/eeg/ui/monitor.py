@@ -2,7 +2,6 @@
 import threading
 import time
 import traceback
-import os
 from pathlib import Path
 
 from dataclasses import replace
@@ -17,7 +16,7 @@ from ..core.game_bridge import SignalTap
 from ..core import hardware as hw
 from ..core import channel_profiles as cp
 from ..core.boards import CYTON, CYTON_DAISY, UNICORN
-from ..core.config import CH_NAMES, DATA_DIR, FS, N_CH
+from ..core.config import FS, N_CH
 from .matdialog import open_recording, remap
 from .panel import ControlPanel
 from .playback import Player, TransportBar
@@ -108,13 +107,16 @@ class MonitorPage(QtWidgets.QWidget):
         self.short_results = []
         self._configuring = False       # a board command is running in the background
         self._pending_hardware = None
-        self.hardware_jobs = Jobs(self)
+        # Work on the board (connecting, channel commands, tests) runs in a pool of its own: Stop waits
+        # for it before the board is released, and must not wait for a Workbench analysis as well.
+        self.board_pool = QtCore.QThreadPool(self)
+        self.hardware_jobs = Jobs(self, pool=self.board_pool)
         self.hardware_jobs.finished.connect(self._hardware_applied)
-        self.connect_jobs = Jobs(self)
+        self.connect_jobs = Jobs(self, pool=self.board_pool)
         self.connect_jobs.finished.connect(self._connected)
         self._connect_cancel = None
         self._connect_request = None
-        self.board_jobs = Jobs(self)
+        self.board_jobs = Jobs(self, pool=self.board_pool)
         self.board_jobs.finished.connect(self._board_job_finished)
         self._board_job_done = None
         self._finished_sweep = None
@@ -330,7 +332,7 @@ class MonitorPage(QtWidgets.QWidget):
         form = QtWidgets.QFormLayout(self.quality_settings)
         self.quality_controls = []
         for label, value, maximum, suffix in [('Flat (EEG µV <)', .1, 100, ' µV'), ('Check signal (EEG µV >)', 100, 100000, ' µV'),
-                                               ('Line noise (50 Hz >)', 20, 100, ' %'), ('Saturated (rail >)', 15, 100, ' %')]:
+                                               ('Line noise (mains >)', 20, 100, ' %'), ('Saturated (rail >)', 15, 100, ' %')]:
             spin = NoScrollSpinBox(); spin.setRange(0, maximum); spin.setDecimals(2)
             spin.setValue(value); spin.setSuffix(suffix); form.addRow(label, spin)
             self.quality_controls.append(spin)
@@ -617,7 +619,6 @@ class MonitorPage(QtWidgets.QWidget):
 
     def _switched_off_now(self):
         """Channels powered down on the board right now: live settings, or the recording's log."""
-        board = self.panel.board
         if self.is_live and self._applied_hardware and len(self._applied_hardware) == self.n_channels:
             return {i for i, s in enumerate(self._applied_hardware) if not s.on}
         recording = getattr(self.source, 'recording', None)
@@ -896,7 +897,7 @@ class MonitorPage(QtWidgets.QWidget):
         if self._starting and self._connect_cancel is not None:
             # A connect is still opening the board: it closes what it opened.
             self._connect_cancel.set()
-            QtCore.QThreadPool.globalInstance().waitForDone(20000)
+            self.board_pool.waitForDone(20000)
             self._starting = False
             self.panel.start_button.setEnabled(True)
         if self._configuring:
@@ -904,7 +905,7 @@ class MonitorPage(QtWidgets.QWidget):
             self.hardware_jobs.invalidate()
             self.board_jobs.invalidate()
             self._board_job_done = None
-            QtCore.QThreadPool.globalInstance().waitForDone(10000)
+            self.board_pool.waitForDone(10000)
             self._configuring = False
             self._set_hardware_busy(False)
         if self.impedance_sweep is not None:
@@ -1688,7 +1689,7 @@ class MonitorPage(QtWidgets.QWidget):
             return
         applied = self._applied_hardware or hw.default_settings(self.n_channels)
         channels = list(range(self.n_channels))
-        self.short_capture = shorted_test.Capture(channels, self.fs)
+        self.short_capture = shorted_test.Capture(channels, self.fs, mains=self.panel.filters.mains)
         self._impedance_buttons(False)
         self.quality_table.show_state("ADS1299 internal short")
         self.panel.hardware.short_result.setText("Internal short · configuring board…")
@@ -1914,7 +1915,10 @@ class MonitorPage(QtWidgets.QWidget):
         if now - self._last_quality >= 1 and self.sample_position != self._quality_position:
             flat, high, mains, saturated = [control.value() for control in self.quality_controls]
             limits = QualityLimits(flat, high, mains / 100, saturated / 100)
-            quality = quality_snapshot(self.raw_buffer, self.fs, self.sample_position / self.fs, self._rail_uv, limits)
+            mains = self.panel.filters.mains
+            self.quality_table.set_mains(mains)
+            quality = quality_snapshot(self.raw_buffer, self.fs, self.sample_position / self.fs, self._rail_uv, limits,
+                                       mains)
             values = self.quality_tracker.update(quality)
             off = self._off_channels
             if off:

@@ -14,8 +14,8 @@ reasons are kept beside each function.
 * CWT: a complex Morlet ("cmor1.5-1.0", pywt's definition), so |coefficient| is
   the amplitude envelope, smooth; a real wavelet's magnitude collapses every half
   cycle. Computed from the wavelet's formula rather than with `pywt.cwt` (see
-  `cwt_amplitude`). Here a sine of amplitude A reads A, as everywhere in EEG
-  Studio; the lab (like scipy's STFT) gives A/2.
+  `cwt_amplitude`). Here a sine of amplitude A reads A, as everywhere in
+  GIOVA; the lab (like scipy's STFT) gives A/2.
 
 Pure numpy/scipy + PyWavelets (denoising, bands) - no Qt. pywt is imported when first used.
 """

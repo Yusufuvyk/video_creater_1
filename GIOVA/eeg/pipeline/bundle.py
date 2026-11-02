@@ -26,7 +26,6 @@ import ast
 import builtins
 from dataclasses import dataclass, field
 import io
-from pathlib import Path
 import symtable
 import tokenize
 

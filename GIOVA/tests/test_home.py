@@ -1,6 +1,6 @@
 """Home, the mode menu, starting in the last mode, and pages built only when first opened.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

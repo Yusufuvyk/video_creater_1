@@ -1,7 +1,7 @@
 """Letting a game read the signal GIOVA is already streaming.
 
-A game such as alpha_ball_game_openbci's alpha ball opens the board itself. Inside EEG
-Studio it cannot: the Monitor holds the serial port, and a port has one owner.
+A game such as alpha_ball_game_openbci's alpha ball opens the board itself. Inside
+GIOVA it cannot: the Monitor holds the serial port, and a port has one owner.
 So the game runs in its own process and its `acquisition.EEG` is swapped for a
 client of this bridge. The Monitor pushes every raw chunk it receives into a
 `SignalTap`; the game asks the bridge for "the last N seconds", sends markers,

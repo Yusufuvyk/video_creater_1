@@ -20,10 +20,10 @@ TIMESTAMP_ROW = BoardShim.get_timestamp_channel(BOARD)
 #: them. Anything reading these constants to describe such a *file* is a bug.
 #:
 #: The electrodes are OpenBCI's own default 16-channel layout, in pin order -
-#: Cyton 1-8 then Daisy 9-16. Verified against the GUI shipped in this repo:
-#: `OpenBCI_GUI/data/electrode_positions_default.txt` gives the same sixteen
-#: positions in the same order, and each one lands within a fifth of a
-#: half-head-width of its true 10-20 location.
+#: Cyton 1-8 then Daisy 9-16. Verified against the OpenBCI GUI's
+#: `data/electrode_positions_default.txt`: the same sixteen positions in the
+#: same order, each within a fifth of a half-head-width of its true 10-20
+#: location.
 #:
 #: This is the lab's declared standard, not a fact about the hardware. If a
 #: headset is wired differently, change it here, or override one recording at a
@@ -42,9 +42,10 @@ BANDS = (
     ("gamma", 30.0, 45.0),
 )
 
-_PKG = Path(__file__).resolve().parent
-_SCRIPTS = _PKG.parent          # eegstudio
-_PROJECT = _SCRIPTS.parent      # the folder above
+#: The project folder: the one holding eeg_studio.py and the `eeg` package (this
+#: file is eeg/core/config.py). Never the package itself - whatever is written
+#: inside `eeg` travels into the packaged exe with the code (build_exe.bat).
+PROJECT_DIR = Path(__file__).resolve().parents[2]
 
 #: The recordings folder has moved around and is spelled both ways. Try the
 #: likely spots rather than hard-coding one, so moving the project again does
@@ -53,10 +54,14 @@ _DATA_NAMES = ("Data", "data")
 
 
 def find_data_dir():
-    # Packaged exe: the code lives in a bundle folder that may be replaced on
-    # the next build. An exe still in the project's dist folder records into the
-    # project's own Data (a rebuild recreates dist); one copied anywhere else
-    # records next to itself.
+    """Where recordings are written and looked for when the user has chosen no folder.
+
+    Packaged exe: the code lives in a bundle folder that may be replaced on the
+    next build. An exe still in the project's dist folder records into the
+    project's own Data (a rebuild recreates dist); one copied anywhere else
+    records next to itself. From source: the project's Data, else one in the
+    folder above it, else the project's Data is where it will be made.
+    """
     if getattr(sys, "frozen", False):
         exe = Path(sys.executable).resolve().parent
         if exe.parent.name.lower() == "dist":
@@ -65,21 +70,20 @@ def find_data_dir():
                 if candidate.is_dir():
                     return candidate
         return exe / "Data"
-    for parent in (_SCRIPTS, _PROJECT):
+    for parent in (PROJECT_DIR, PROJECT_DIR.parent):
         for name in _DATA_NAMES:
             candidate = parent / name
             if candidate.is_dir():
                 return candidate
-    return _SCRIPTS / "Data"
+    return PROJECT_DIR / "Data"
 
 
 DATA_DIR = find_data_dir()
 
 #: Game folders (each with an eegstudio_game.json) found automatically: next to
-#: the exe when packaged, else eegstudio/Games. More folders can be added in the app.
+#: the exe when packaged, else the project's Games. More folders can be added in the app.
 GAMES_DIR = (Path(sys.executable).resolve().parent / "Games" if getattr(sys, "frozen", False)
-             else _SCRIPTS / "Games")
-VENV_PYTHON = _PROJECT / ".venv" / "Scripts" / "python.exe"
+             else PROJECT_DIR / "Games")
 
 #: Marker sidecars sit next to their recording and share the .csv extension,
 #: but hold (unix_time, label) rows rather than samples. Listing one as a

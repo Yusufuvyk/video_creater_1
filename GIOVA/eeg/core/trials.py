@@ -9,15 +9,13 @@ waveforms first would cancel oscillations whose phase differs across the scalp.
 The Signal view still shows the channel-mean waveform, and says so.
 """
 from dataclasses import dataclass, field
-
-import numpy as np
-
 import warnings
 
+import numpy as np
 from scipy.signal import detrend
 
 from .config import BANDS
-from .processing import filter_finite, RAIL_UV
+from .processing import filter_finite
 from .spectral import sample_index, band_integral, welch_sizes, welch_psd
 
 

@@ -1,6 +1,6 @@
 """Offscreen screenshots of a quick analysis on the Workbench, every result view (not a unit test).
 
-Run: .venv/Scripts/python eegstudio/tests/validate_views.py
+Run: .venv/Scripts/python tests/validate_views.py
 Eyes open / closed on a real recording (GIOVA_ALPHA_RECORDING), as Home's Quick analysis opens it: the Epochs block with its trial
 table, the spectrum (mean of trials, mean signal, contrast), the features, and the time-frequency views (map,
 band course, head map A / B / B - A, statistics), at 1366 x 768 and 1600 x 950. Set QT_SCALE_FACTOR=1.5 to see

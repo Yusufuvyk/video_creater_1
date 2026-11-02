@@ -9,7 +9,7 @@ the same rules once nested structs are flattened.
 When the guess fails the caller is handed the variable list and asks the user,
 rather than picking something and being quietly wrong.
 
-Pure scipy/numpy - no Qt.
+Pure scipy/numpy (+ h5py for v7.3 files) - no Qt.
 """
 import json
 from pathlib import Path
@@ -39,7 +39,7 @@ class MatError(Exception):
 
 
 class MatVersionUnsupported(MatError):
-    """MATLAB v7.3 files are HDF5 and scipy cannot open them."""
+    """A MATLAB v7.3 file (HDF5) and no h5py to read it with."""
 
 
 class MatLayoutUnknown(MatError):
@@ -1081,10 +1081,7 @@ def preview(variables, mapping):
         flat = Mapping(mapping.data_key, fs=_rate(variables, mapping), rows=mapping.rows, scale=mapping.scale)
         return "{} trials  |  ".format(trials.shape[0]) + _single_preview(variables, flat, shown)
     if mapping.parts:
-        try:
-            lengths = [np.asarray(variables[key]).shape[0 if mapping.transpose else 1]
-                       for key, _, _ in mapping.parts]
-        except (KeyError, IndexError):
+        if any(key not in variables for key, _, _ in mapping.parts):
             return "a part of this preset is missing from the file"
         counts = ", ".join("{} x{}".format(label, int(n or 0)) for _, label, n in mapping.parts)
         prefix = "{} parts joined, {} trials ({})  |  ".format(

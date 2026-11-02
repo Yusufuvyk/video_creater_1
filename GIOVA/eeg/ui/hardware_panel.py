@@ -15,7 +15,7 @@ IMPEDANCE_HELP = (
     "electrode + head + BIAS electrode, so put the BIAS electrode on the skin.\n"
     "Green < 750 kΩ, yellow < 2500 kΩ, red above: the OpenBCI GUI defaults for this "
     "same Cyton measurement. Open? ≥ 4 MΩ: OpenBCI reports ~5000 kΩ with no electrode "
-    "attached. Green means contact is adequate; still check the 50 Hz column and the "
+    "attached. Green means contact is adequate; still check the mains (50 / 60 Hz) column and the "
     "signal. Your channel/BIAS settings are restored afterwards.")
 
 
@@ -93,7 +93,7 @@ class HardwareGroup(QtWidgets.QGroupBox):
         self.short_button = QtWidgets.QPushButton("ADS1299 internal short (20 s)")
         self.short_button.setToolTip(
             "Internally shorts every ADS1299 input for 20 seconds, measures ADC/PGA noise "
-            "and 50 Hz pickup, then restores all channel/BIAS settings. Electrodes may stay "
+            "and mains (50 / 60 Hz) pickup, then restores all channel/BIAS settings. Electrodes may stay "
             "connected because the input mux disconnects them during the test.")
         self.short_button.clicked.connect(self.short_clicked.emit)
         # A hardware diagnostic, rarely needed: it lives in Settings -> Monitor

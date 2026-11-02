@@ -1,7 +1,7 @@
 """MATLAB files of any layout: runs in a cell array, events in variables, layouts kept for files alike; a block's
 problem shown where it is seen with what to do; nothing wider than a laptop screen.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

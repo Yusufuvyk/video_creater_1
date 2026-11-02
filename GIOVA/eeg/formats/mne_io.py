@@ -26,8 +26,15 @@ from ..core.sources import Recording
 
 MNE_SUFFIXES = (".edf", ".bdf", ".gdf", ".fif", ".set", ".vhdr")
 
-#: Stimulus/annotation codes that mark bad or boundary segments rather than trials.
+#: Annotations that mark bad or boundary segments rather than trials: any description starting with one of
+#: these, whatever its case (BAD_blink, bad_motion, EDGE, boundary), as MNE itself reads them.
 IGNORED_LABELS = ("BAD", "EDGE", "boundary")
+#: Matches an annotation that is not one of those (mne.events_from_annotations' `regexp`).
+_KEPT = "(?i)^(?!({}))".format("|".join(re.escape(b) for b in IGNORED_LABELS))
+
+
+def _is_ignored(description):
+    return str(description).upper().startswith(tuple(b.upper() for b in IGNORED_LABELS))
 
 
 def is_mne_file(path):
@@ -92,15 +99,14 @@ def raw_events(raw):
     annotations = raw.annotations
     if annotations is not None and len(annotations):
         # events_from_annotations resolves orig_time / first_samp correctly for every format.
-        pattern = "^(?!({}))".format("|".join(re.escape(b) for b in IGNORED_LABELS))
         try:
-            found, codes = mne.events_from_annotations(raw, regexp=pattern, verbose="error")
+            found, codes = mne.events_from_annotations(raw, regexp=_KEPT, verbose="error")
         except ValueError:
             found, codes = np.zeros((0, 3), int), {}
         if len(found):
             names = {code: label for label, code in codes.items()}
             # one event per annotation kept, in the annotations' order: their lengths go with them
-            kept = [re.match(pattern, d) is not None for d in annotations.description]
+            kept = [not _is_ignored(d) for d in annotations.description]
             durations = np.asarray(annotations.duration, dtype=float)[kept]
             return EventTable((found[:, 0] - raw.first_samp) / fs,
                               durations if durations.size == len(found) else None,
@@ -120,7 +126,7 @@ def bad_spans(raw):
     annotations = raw.annotations
     if annotations is None or not len(annotations):
         return []
-    bad = [d.startswith(IGNORED_LABELS) for d in annotations.description]
+    bad = [_is_ignored(d) for d in annotations.description]
     if not any(bad):
         return []
     # as mne.events_from_annotations places an annotation, so the spans line up with the events

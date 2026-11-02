@@ -81,14 +81,19 @@ class Job(QtCore.QRunnable):
 
 
 class Jobs(QtCore.QObject):
+    """Background work, only the newest delivered. `pool`: where it runs (default the program's shared one);
+    work that something must wait for alone - the board's commands before it is released - gets its own
+    pool, so that wait never waits for an unrelated analysis as well."""
+
     finished = QtCore.Signal(object, object)
 
-    def __init__(self, parent=None, busy=False):
+    def __init__(self, parent=None, busy=False, pool=None):
         super().__init__(parent)
         self.revision = 0
         self.active = {}
         #: work someone waits for: counted in `activity()` until it ends
         self.busy = busy
+        self.pool = pool if pool is not None else QtCore.QThreadPool.globalInstance()
 
     def invalidate(self):
         self.revision += 1
@@ -101,7 +106,7 @@ class Jobs(QtCore.QObject):
         if self.busy:
             activity().begin()
             job.signals.done.connect(activity().job_done)      # every job ends once, stale or not
-        QtCore.QThreadPool.globalInstance().start(job)
+        self.pool.start(job)
 
     @QtCore.Slot(int, object, object)
     def _deliver(self, revision, result, error):

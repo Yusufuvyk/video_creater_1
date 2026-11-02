@@ -1,7 +1,7 @@
 """Trials picked by hand and their time-frequency maps: Select trials, Filter trials, the ideal filter,
 Time-frequency fed by trials, one-trial maps, and the Cho2017 trial template.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

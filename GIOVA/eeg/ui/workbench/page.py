@@ -31,7 +31,7 @@ from ..jobs import activity
 from ..preferences import data_dir, setting, user_settings
 from ..theme import color, muted, soften
 from ..widgets import ElidedLabel, WrapRow, group
-from ..icons import only, put
+from ..icons import only
 from .canvas import BLOCK_MIME, CATEGORY_COLOURS, CATEGORY_ICONS, BlockPreview, Canvas
 from .inspector import Inspector
 from .library import Library

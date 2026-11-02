@@ -1,6 +1,6 @@
 """Projects (folders shown as trees of recordings) and the side panes that fold away.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import contextlib
 import os
@@ -34,14 +34,26 @@ KEYS = ("recording/folder", pp.FOLDERS_KEY, "window/panel/Monitor", "window/side
 
 class ProjectNameTests(unittest.TestCase):
     def test_two_projects_of_one_name_are_told_apart_by_the_folder_above(self):
-        exe, central = r"E:\work\eegstudio\dist\GIOVA\Data", r"E:\work\eegstudio\Data"
-        twins = (r"C:\a\study\Data", r"D:\b\study\Data")
-        names = pp.project_names([exe, central, r"E:\x\Coffee", *twins])
+        def at(*parts):             # an absolute path on this system: E:\work\... on Windows, /work/... elsewhere
+            return str(Path(Path.cwd().anchor, *parts))
+        exe, central = at("work", "eegstudio", "dist", "GIOVA", "Data"), at("work", "eegstudio", "Data")
+        twins = (at("a", "study", "Data"), at("b", "study", "Data"))
+        coffee = at("x", "Coffee")
+        names = pp.project_names([exe, central, coffee, *twins])
         self.assertEqual(names[exe], ("Data", "GIOVA"))
         self.assertEqual(names[central], ("Data", "eegstudio"))
-        self.assertEqual(names[r"E:\x\Coffee"], ("Coffee", ""))          # a name used once: nothing added
-        self.assertEqual(names[twins[0]], ("Data", r"a\study"))         # same folder above: one more step up
-        self.assertEqual(names[twins[1]], ("Data", r"b\study"))
+        self.assertEqual(names[coffee], ("Coffee", ""))                         # a name used once: nothing added
+        self.assertEqual(names[twins[0]], ("Data", os.path.join("a", "study")))  # same folder above: one more up
+        self.assertEqual(names[twins[1]], ("Data", os.path.join("b", "study")))
+
+    def test_from_source_recordings_are_never_kept_inside_the_package(self):
+        # Whatever is inside eeg/ is packed into the exe with the code (build_exe.bat): a recording there
+        # would travel in the download.
+        from eeg.core import config
+        package = Path(config.__file__).resolve().parents[1]
+        self.assertEqual(config.PROJECT_DIR, ROOT)
+        self.assertFalse(config.find_data_dir().resolve().is_relative_to(package))
+        self.assertFalse(config.GAMES_DIR.resolve().is_relative_to(package))
 
     def test_an_exe_in_the_projects_dist_folder_records_into_the_projects_data(self):
         from eeg.core import config

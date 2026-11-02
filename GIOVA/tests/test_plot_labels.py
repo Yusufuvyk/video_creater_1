@@ -6,7 +6,7 @@ border of a spectrum. These tests draw each kind of result GIOVA shows - a recor
 spectra in every scale, band power, time-frequency maps in every view, two windows compared, scores - from real
 pipeline runs at three signal sizes, and look at every axis of every plot in them.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

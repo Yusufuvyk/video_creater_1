@@ -130,7 +130,8 @@ always get the raw signal.</p>
 purpose: raw RMS is mostly drift and mains.</td></tr>
 <tr><td>Rail %</td><td>Share of samples within 5 % of the amplifier rail
 (±187,500 µV on the Cyton at gain 24; ±750,000 µV on the Unicorn).</td></tr>
-<tr><td>50 Hz %</td><td>Power 49–51 Hz ÷ power 1–60 Hz.</td></tr>
+<tr><td>50 Hz %</td><td>Power 49–51 Hz ÷ power 1–60 Hz. With the filters' Mains at 60 Hz the column is
+<b>60 Hz %</b>: power 59–61 Hz ÷ power 1–70 Hz.</td></tr>
 </table>
 <p>Verdicts, first match wins:</p>
 <table>
@@ -141,7 +142,7 @@ purpose: raw RMS is mostly drift and mains.</td></tr>
 <tr><td>Check signal</td><td>EEG µV &gt; 100</td></tr>
 <tr><td>Identical signal</td><td>two channels differ by &lt; 2 % (same electrical node:
 floating or bridged electrodes)</td></tr>
-<tr><td>Line noise</td><td>50 Hz share &gt; 20 %</td></tr>
+<tr><td>Line noise</td><td>mains (50 or 60 Hz) share &gt; 20 %</td></tr>
 </table>
 <p>A warning must repeat <b>2</b> evaluations before it shows and <b>3</b> clean ones before it
 clears, so single spikes do not flicker. Limits are editable in
@@ -299,7 +300,7 @@ limits, and are not used for the Unicorn or for recordings of other systems.</li
 <li>The current returns through <b>BIAS</b>: the value is electrode + head + BIAS
 electrode, so BIAS must be on the skin.</li>
 <li>Green means <i>contact is adequate</i>, not <i>signal is good</i>: still check the
-50 Hz column and the trace.</li>
+mains (50 / 60 Hz) column and the trace.</li>
 <li>Values are approximate (square-wave drive, 125 Hz sampling): use them to tell
 touching / poor / open apart.</li>
 <li>Afterwards each channel gets your own On/BIAS setting back.</li>
@@ -408,7 +409,8 @@ exports use unsmoothed values.</td></tr>
 <tr><td>Window</td><td>last 4 s of raw data</td><td>Updated about once per second.</td></tr>
 <tr><td>Flat / Check signal</td><td>0.1 µV / 100 µV</td><td>EEG-band amplitude limits
 (±100 µV is the usual artefact limit for scalp EEG).</td></tr>
-<tr><td>Line noise</td><td>20 %</td><td>Share of 49–51 Hz in 1–60 Hz power.</td></tr>
+<tr><td>Line noise</td><td>20 %</td><td>Share of 49–51 Hz in 1–60 Hz power (59–61 Hz in 1–70 Hz
+when the filters' Mains is 60 Hz).</td></tr>
 <tr><td>Saturated</td><td>15 %</td><td>Share of samples near the amplifier rail.</td></tr>
 <tr><td>Hysteresis</td><td>2 on / 3 off</td><td>Evaluations needed to show / clear a warning.</td></tr>
 </table>
@@ -684,12 +686,14 @@ display filters remove anyway.</p>
 channel reads <b>0 %</b>. A railed sample carries no EEG at all: the input is so far off that
 the amplifier is clipped. Typical cause: the electrode is not on the skin, or the reference
 (SRB2 / ear clip) is not connected.</p>
-<p><b>50 Hz %</b>: how much of the 1–60 Hz power is mains hum, 49–51 Hz. A good contact
+<p><b>50 Hz %</b>: how much of the 1–60 Hz power is mains hum, 49–51 Hz. Where the mains is
+60 Hz (the Americas, Korea, Japan), choose 60 Hz as the filters' Mains: the column becomes
+<b>60 Hz %</b>, the share of 59–61 Hz in 1–70 Hz. A good contact
 reads a few %. High values mean the electrode picks up the room's wiring: poor contact, a
-dry electrode, a cable lying near a power lead or a charger. The notch filter removes 50 Hz
+dry electrode, a cable lying near a power lead or a charger. The notch filter removes the mains
 from the <i>traces</i>, so a channel can look clean on screen and still read high here; this
 column is measured on raw data for that reason. It shows — when the sampling rate is too low
-to see 50 Hz.</p>
+to see the mains.</p>
 
 <h3>Statuses (first match wins, in this order)</h3>
 <p><b>Collecting data</b>: less than 4 s since Start, or since the channels changed. Nothing
@@ -710,7 +714,7 @@ the electrode gently.</p>
 (they differ by less than 2 %). Two electrodes centimetres apart never do that on a head.
 Either both are not touching the skin and float together, or gel / sweat bridges them. The
 detail names the partner channel.</p>
-<p><b>Line noise</b>: 50 Hz share <b>&gt; 20 %</b>. The EEG is there but buried in mains hum.
+<p><b>Line noise</b>: mains (50 or 60 Hz) share <b>&gt; 20 %</b>. The EEG is there but buried in mains hum.
 Improve the contact of that electrode, and move cables away from power leads and
 chargers; a laptop on its charger often makes it worse.</p>
 <p><b>No issues detected</b>: none of the checks above fired. It means the signal is plausible,

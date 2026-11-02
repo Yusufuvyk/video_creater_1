@@ -4,7 +4,7 @@ Every classifier is run on the same folds as the scikit-learn / pyRiemann
 pipeline it stands for and must predict the same; the FIR is checked against
 MNE's own design rule; ICA must take a blink out of the frontal channels.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

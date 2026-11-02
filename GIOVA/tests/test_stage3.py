@@ -1,6 +1,6 @@
 """Python export, reports, the Compare window and opening the Analysis page's set-up on the Workbench.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

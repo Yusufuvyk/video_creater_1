@@ -5,7 +5,7 @@ with the Analysis page's own core functions (core.trials, core.epochs) on the sa
 trials: ids, conditions, start / end, the common duration, reasons, explicit notches, detrend and the
 time-frequency settings. T-numbers refer to the migration plan's acceptance matrix.
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

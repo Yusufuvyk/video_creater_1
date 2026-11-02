@@ -1,7 +1,7 @@
 """Graphs that do not zoom by accident, reports in four formats, FFT and spectrum scales, units,
 the categories of the block list and the busy trace (24 October 2026).
 
-Run: .venv/Scripts/python -m unittest discover -s eegstudio/tests -p "test_*.py"
+Run: .venv/Scripts/python -m unittest discover -s tests -p "test_*.py"
 """
 import os
 from pathlib import Path

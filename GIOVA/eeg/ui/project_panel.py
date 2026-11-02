@@ -7,6 +7,7 @@ Removing a project only takes it off this list: no file is ever deleted here.
 """
 import html
 import json
+import os
 from pathlib import Path
 
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
@@ -37,7 +38,7 @@ def project_names(folders):
             depth = 1
             while depth < len(mine) and any(Path(t).parts[:-1][-depth:] == mine[-depth:] for t in twins):
                 depth += 1
-            where = "\\".join(mine[-depth:]).strip("\\") or str(Path(folder).parent)
+            where = os.sep.join(mine[-depth:]).strip(os.sep) or str(Path(folder).parent)
         found[folder] = (name, where)
     return found
 

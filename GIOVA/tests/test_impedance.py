@@ -173,6 +173,7 @@ class MonitorFlow(unittest.TestCase):
             state['channel'], state['pos'] = following, 0
 
         def flush():
+            page.board_pool.waitForDone(5000)             # board commands run in the Monitor's own pool
             QtCore.QThreadPool.globalInstance().waitForDone(5000)
             self.app.processEvents()
 

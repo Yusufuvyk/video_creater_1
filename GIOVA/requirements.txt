@@ -7,7 +7,7 @@ scipy
 matplotlib
 pygame
 
-# --- GUI for eeg_dashboard.py ---
+# --- the window (eeg/ui) ---
 pyqtgraph
 # PySide6 is PINNED to 6.8.x on purpose. Qt 6.9+ wheels link against an
 # external icuuc.dll that they do not ship; on this machine that resolves to
