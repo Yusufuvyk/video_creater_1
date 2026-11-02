@@ -14,6 +14,7 @@ from .theme import CONDITIONS, plot_background
 
 
 def fmt(value):
+    """A value as the table shows it; a dash when it could not be computed (as tables in papers, APA)."""
     return "—" if not np.isfinite(value) else f"{value:.4g}"
 
 
@@ -243,11 +244,11 @@ class FeatureView(QtWidgets.QWidget):
             if means_only:
                 ma = self.result.features.mean_signals[a].values[spec.id]
                 mb = self.result.features.mean_signals[b].values[spec.id]
-                cells = [spec.name, spec.unit, fmt(ma), fmt(mb), fmt(mb - ma), "1 mean / 1 mean", "—", "Mean signal only"]
+                cells = [spec.name, spec.unit, fmt(ma), fmt(mb), fmt(mb - ma), "1 mean / 1 mean", "", "Mean signal only"]
             else:
                 cells = [spec.name, spec.unit, f"{fmt(sa['mean'])} ± {fmt(sa['sd'])}",
                          f"{fmt(sb['mean'])} ± {fmt(sb['sd'])}", fmt(sb['mean'] - sa['mean']),
-                         f"{sa['n']} / {sb['n']}", fmt(cliffs_delta(va, vb)) if a != b else "—",
+                         f"{sa['n']} / {sb['n']}", fmt(cliffs_delta(va, vb)) if a != b else "",
                          "" if min(sa['n'], sb['n']) >= 3 else "Need 3 trials/condition for δ"]
             reasons = sorted({v.reasons[spec.id] for v in self.result.features.trials.values() if spec.id in v.reasons})
             if reasons:

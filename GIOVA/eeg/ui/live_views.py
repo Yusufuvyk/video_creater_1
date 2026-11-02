@@ -98,7 +98,9 @@ class QualityTable(QtWidgets.QTableWidget):
         self.cellClicked.connect(lambda row, col: self.channel_clicked.emit(row))
         self._names = None
         self.setToolTip('Quality uses the last 4 s of raw data, before display filters. '
-                        'RMS is mean-removed. These are signal checks, not impedance measurements.')
+                        'RMS is mean-removed. These are signal checks, not impedance measurements. '
+                        '—: not measured yet, or not measurable here (no rail known for a file of another '
+                        'system; the mains above the Nyquist frequency).')
 
     def set_mains(self, hz):
         """The last column measures the line noise at `hz` (the filters' Mains: 50 or 60 Hz)."""

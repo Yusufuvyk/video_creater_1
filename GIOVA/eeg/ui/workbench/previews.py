@@ -1428,6 +1428,8 @@ STAT_COLUMNS = (("Channel", "channel"), ("Band", "band"), ("Hz", "band_hz"), ("A
                 ("A SD", "sd_a"), ("A n", "n_a"), ("A pooled %", "pooled_a"), ("B mean %", "mean_b"),
                 ("B SD", "sd_b"), ("B n", "n_b"), ("B pooled %", "pooled_b"), ("B − A (pp)", "difference"),
                 ("Cliff's δ", "cliffs_delta"), ("p (Welch)", "p_welch"))
+#: The statistics columns that compare A with B: blank when no condition B is chosen.
+COMPARISON_KEYS = frozenset(("mean_b", "sd_b", "n_b", "pooled_b", "difference", "cliffs_delta", "p_welch"))
 #: Where the active window starts and ends (the cue and the end of imagery, in a cued design).
 #: Ochre, not red: in GIOVA red only means an error.
 WINDOW_PEN = dict(color="#C49A5A", width=1.3, style=QtCore.Qt.PenStyle.DashLine)
@@ -1753,11 +1755,15 @@ class TFPreview(_Preview):
             self.caption.setText(str(exc))
             return
         self.table.setRowCount(len(rows))
+        compared = len(self._pair()) == 2
         for i, row in enumerate(rows):
             for j, (_, key) in enumerate(STAT_COLUMNS):
                 value = row[key]
-                text = value if isinstance(value, str) else str(value) if isinstance(value, int) else \
-                    "" if not np.isfinite(value) else "{:.3g}".format(value)
+                # as tables in papers (APA): blank where a value does not apply (B with no condition compared),
+                # a dash where it could not be computed, said in the caption
+                text = ("" if key in COMPARISON_KEYS and not compared else value if isinstance(value, str) else
+                        str(value) if isinstance(value, int) else
+                        "—" if not np.isfinite(value) else "{:.3g}".format(value))
                 cell = QtWidgets.QTableWidgetItem(text)
                 cell.setFlags(cell.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(i, j, cell)
@@ -1765,10 +1771,10 @@ class TFPreview(_Preview):
         self.caption.setText(
             "Per channel, each trial's ERD in the active window ({:g}–{:g} s) of {} (A){}. Difference: B − A in "
             "percentage points; Cliff's delta: B over A; Welch's t-test p, not corrected for the {} tests made: a "
-            "screen, not a finding. {}".format(*self.value.settings.active, pair[0],
-                                               " and {} (B)".format(pair[1]) if len(pair) == 2 else
-                                               "; choose a condition in Compare with for B", len(rows),
-                                               ep.window_means_text(self.value.settings)))
+            "screen, not a finding. —: could not be computed (an SD and p need 2 trials, Cliff's δ 3). {}".format(
+                *self.value.settings.active, pair[0],
+                " and {} (B)".format(pair[1]) if len(pair) == 2 else "; choose a condition in Compare with for B",
+                len(rows), ep.window_means_text(self.value.settings)))
 
     def _condition(self):
         return self.value.conditions[max(0, self.condition.currentIndex())]

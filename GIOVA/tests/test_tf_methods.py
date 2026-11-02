@@ -132,5 +132,34 @@ class HeadMapTextTests(unittest.TestCase):
         self.assertIn("separate STFT", preview.caption.text())
 
 
+class EmptyCellTests(unittest.TestCase):
+    """As tables in papers (APA): a cell whose value does not apply is blank; one that could not be computed has a
+    dash, and the caption says what it means."""
+
+    def test_the_statistics_table_tells_not_applicable_from_not_computed(self):
+        from pyqtgraph.Qt import QtWidgets
+        from eeg.ui.workbench.previews import COMPARISON_KEYS, NO_COMPARISON, STAT_COLUMNS, STATS_VIEW, TFPreview
+        QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        rng = np.random.default_rng(2)
+        fs, seconds = 128.0, 4.0
+        labels = ["A", "A", "A", "B"]                       # one B trial: its SD and p cannot be computed
+        data = rng.normal(0, 5, (2, int(len(labels) * seconds * fs)))
+        events = ep.EventTable(np.arange(len(labels)) * seconds + 0.5, None, labels)
+        result = compute.time_frequency(Recording(data, fs, ["C3", "C4"], events=events), **COMMON)
+        preview = TFPreview(result)
+        self.addCleanup(preview.close)
+        preview.view_box.setCurrentText(STATS_VIEW)
+        columns = {key: j for j, (_, key) in enumerate(STAT_COLUMNS)}
+        preview.compare.setCurrentText(NO_COMPARISON)          # A alone: nothing to compare it with
+        self.assertEqual(preview._pair(), ["A"])
+        for key in COMPARISON_KEYS:
+            self.assertEqual(preview.table.item(0, columns[key]).text(), "", key)
+        preview.compare.setCurrentText("B")
+        self.assertEqual(preview._pair(), ["A", "B"])
+        self.assertEqual(preview.table.item(0, columns["sd_b"]).text(), "—")         # one trial: no SD
+        self.assertEqual(preview.table.item(0, columns["p_welch"]).text(), "—")
+        self.assertIn("—: could not be computed", preview.caption.text())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -237,7 +237,7 @@ class FeatureUiTests(unittest.TestCase):
         points[0].sigClicked.emit(points[0],[points[0].points()[0]],None)
         self.assertIn(received[0],["a","b"])
         view.source.setCurrentIndex(1)
-        self.assertEqual(view.table.item(0,6).text(),"—")
+        self.assertEqual(view.table.item(0,6).text(),"")      # Cliff's delta of one mean each: does not apply
         self.assertFalse(view.time_toggle.isEnabled())
         dialog=ProfileDialog(None,FeatureProfile());dialog.high.setValue(40)
         self.assertEqual(dialog.read().total_range,[1,40])
