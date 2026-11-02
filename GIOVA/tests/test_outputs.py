@@ -25,9 +25,9 @@ from test_pipeline import save_fif  # noqa: E402
 from test_trial_analysis import scratch  # noqa: E402
 from test_workbench import wait_for_run  # noqa: E402
 from eeg.core.sources import Recording  # noqa: E402
-from eeg.pipeline import PipelineError, Runner, Graph, templates  # noqa: E402
+from eeg.pipeline import PipelineError, templates  # noqa: E402
 from eeg.pipeline import api as ee  # noqa: E402
-from eeg.pipeline.data import Epochs, Spectrum  # noqa: E402
+from eeg.pipeline.data import Epochs  # noqa: E402
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
@@ -103,7 +103,7 @@ class RecordingPreviewTests(unittest.TestCase):
         self.assertEqual(len(widget.plot.getPlotItem().listDataItems()), 2)
         self.assertIn("apart", widget.caption.text())
         widget.for_report()
-        captions = [l.text() for l in widget.findChildren(QtWidgets.QLabel)]
+        captions = [label.text() for label in widget.findChildren(QtWidgets.QLabel)]
         self.assertTrue(any("from 30.0 s" in c or "from 30,0 s" in c for c in captions), captions)   # locale
 
 

@@ -88,7 +88,8 @@ class Matching:
                 if np.isnan(x) or np.isnan(y):
                     self.assertTrue(np.isnan(x) and np.isnan(y), "{} {}".format(label, key))
                 else:
-                    self.assertLessEqual(abs(x - y), TOLERANCE * max(abs(x), 1e-300) + 1e-300, "{} {}".format(label, key))
+                    self.assertLessEqual(abs(x - y), TOLERANCE * max(abs(x), 1e-300) + 1e-300,
+                                         "{} {}".format(label, key))
             else:
                 self.assertEqual(value, other, "{} {}".format(label, key))
         for key, a in s_arrays.items():

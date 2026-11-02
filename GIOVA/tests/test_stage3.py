@@ -20,7 +20,7 @@ from pyqtgraph.Qt import QtCore, QtWidgets  # noqa: E402
 from test_epochs import lateralised  # noqa: E402
 from test_pipeline import imagery, save_fif  # noqa: E402
 from test_trial_analysis import scratch  # noqa: E402
-from test_workbench import fresh_sheet, wait_for_run  # noqa: E402
+from test_workbench import wait_for_run  # noqa: E402
 from eeg.core import analysis_profiles as ap  # noqa: E402
 from eeg.pipeline import Graph, PipelineError, Runner, batch, templates  # noqa: E402
 from eeg.pipeline import api as ee  # noqa: E402
@@ -105,7 +105,7 @@ class ReportTests(unittest.TestCase):
                         ["1", "2", "3", "4"])
         widget = preview(epochs).for_report()
         self.assertTrue(all(w.isHidden() for w in widget.controls))
-        captions = [l.text() for l in widget.findChildren(QtWidgets.QLabel)]
+        captions = [label.text() for label in widget.findChildren(QtWidgets.QLabel)]
         self.assertIn("Channel C3", captions)                 # opened on C3, said in words
 
 
@@ -129,7 +129,7 @@ class RocTests(unittest.TestCase):
         widget = preview(scores)
         roc = [p for p in widget.findChildren(pg.PlotWidget) if "True positive" in p.getAxis("left").labelText]
         self.assertEqual(len(roc), 1)
-        notes = " ".join(l.text() for l in widget.findChildren(QtWidgets.QLabel))
+        notes = " ".join(label.text() for label in widget.findChildren(QtWidgets.QLabel))
         self.assertIn("ROC: every tested trial", notes)
 
 

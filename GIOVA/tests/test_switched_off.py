@@ -49,7 +49,8 @@ def game_recording(directory, on=("O1", "O2"), seconds=60, later_off=None):
         settings[NAMES.index(name)] = "01"
         rows[int(when * fs):, board.eeg_rows[NAMES.index(name)]] = 0
         np.savetxt(path, rows, delimiter="\t")
-        lines.append("{:.3f}\t12:00:{:02d}\tapplied (1 command)\t{}\t-".format(T0 + when, int(when), ";".join(settings)))
+        lines.append("{:.3f}\t12:00:{:02d}\tapplied (1 command)\t{}\t-".format(
+            T0 + when, int(when), ";".join(settings)))
     hardware_log_path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
 

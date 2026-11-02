@@ -182,7 +182,6 @@ class GamesPageTests(unittest.TestCase):
         self.monitor.close()
 
     def test_start_starts_monitor_and_runs_the_game_process(self):
-        from pyqtgraph.Qt import QtCore
         with scratch() as root:
             game_dir = root / "fake"
             game_dir.mkdir()

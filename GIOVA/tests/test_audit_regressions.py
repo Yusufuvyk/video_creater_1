@@ -1,7 +1,6 @@
 """Reproductions of the September 2026 numerical and lifecycle audit findings."""
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-import json
 import time
 import unittest
 from unittest.mock import patch

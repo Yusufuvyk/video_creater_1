@@ -116,7 +116,8 @@ class FeatureMathTests(unittest.TestCase):
         filtered = filter_finite(x, self.fs, low=1, high=45)
         self.assertTrue(np.isnan(filtered[625]))
         np.testing.assert_allclose(filtered[:625], filter_finite(x[:625], self.fs, low=1, high=45))
-        result = analyze(x[None, :], self.fs, 0, "O1", [Trial("1", "open", 0, 4), Trial("2", "closed", 4, 8)], Settings(4))
+        result = analyze(x[None, :], self.fs, 0, "O1", [Trial("1", "open", 0, 4), Trial("2", "closed", 4, 8)],
+                         Settings(4))
         self.assertEqual(len(result.trials), 1)
         self.assertIn("2", result.rejected)
         stream = StreamFilter(design_filter(self.fs, low=1, high=45), 1)

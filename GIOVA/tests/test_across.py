@@ -20,7 +20,7 @@ from test_epochs import lateralised  # noqa: E402
 from test_pipeline import imagery, save_fif  # noqa: E402
 from test_trial_analysis import scratch  # noqa: E402
 from eeg.core.sources import Recording  # noqa: E402
-from eeg.pipeline import Graph, Runner, batch, block, learn  # noqa: E402
+from eeg.pipeline import batch, block, learn  # noqa: E402
 from eeg.pipeline.graph import Context  # noqa: E402
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])

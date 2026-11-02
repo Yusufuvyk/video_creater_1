@@ -7,7 +7,6 @@ import sys
 from contextlib import contextmanager
 import uuid
 import unittest
-from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -35,7 +34,6 @@ from scipy.signal import welch
 from eeg.core.sources import Recording
 from eeg.core.trials import (Settings, Trial, analyze, measure, periodic_trials,
                              prepare_channel, trial_status)
-from eeg.formats.recordings import load_recording
 from eeg.formats.trial_analysis import (export_csv, load_session, power_comparison,
                                         save_session)
 

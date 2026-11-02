@@ -39,8 +39,8 @@ def recording(fs=500.0, seconds=80.0, seed=1, events=None):
     """Three channels: 10 Hz, 50 Hz mains, a slow drift and noise, different on each channel."""
     rng = np.random.default_rng(seed)
     t = np.arange(int(seconds * fs)) / fs
-    rows = [(5 + k) * np.sin(2 * np.pi * 10 * t + k) + 30 * np.sin(2 * np.pi * 50 * t) + 4 * t + rng.normal(0, 3, t.size)
-            for k in range(3)]
+    rows = [(5 + k) * np.sin(2 * np.pi * 10 * t + k) + 30 * np.sin(2 * np.pi * 50 * t) + 4 * t
+            + rng.normal(0, 3, t.size) for k in range(3)]
     return Recording(np.vstack(rows), fs, ["C3", "Cz", "C4"], events=events)
 
 
@@ -357,7 +357,8 @@ class SpectralMeasureTests(unittest.TestCase):
         preview.b_box.setCurrentText("B")
         freqs, d, na, nb = preview.contrast()
         labels = np.asarray(spectrum.labels)
-        expected = condition_contrast(spectrum.power[labels == "A", 0], spectrum.power[labels == "B", 0], spectrum.freqs)
+        expected = condition_contrast(spectrum.power[labels == "A", 0], spectrum.power[labels == "B", 0],
+                                      spectrum.freqs)
         np.testing.assert_allclose(d, expected, rtol=RTOL, atol=ATOL, equal_nan=True)
         self.assertEqual((na, nb), (6, 6))
         self.assertIn("A > B", preview.caption.text())
@@ -490,7 +491,8 @@ class SessionImportTests(unittest.TestCase):
                        Trial("open-2", "Eyes open", 30.0, 41.0, included=False),
                        Trial("closed-2", "Eyes closed", 45.0, 52.0),           # too short for 10 s
                        Trial("open-3", "Eyes open", 55.0, 66.0)]
-        mu = FeatureProfile(name="Mu", bands=[["mu", 8.0, 13.0], ["beta", 13.0, 30.0]], ratios=[["mu/beta", "mu", "beta"]],
+        mu = FeatureProfile(name="Mu", bands=[["mu", 8.0, 13.0], ["beta", 13.0, 30.0]],
+                            ratios=[["mu/beta", "mu", "beta"]],
                             selected=["band:mu", "relative:mu", "ratio:mu/beta", "rms"], total_range=[2.0, 40.0])
         self.settings = Settings(duration=10.0, window=2.0, overlap=0.5, profile=mu.to_dict(),
                                  filters=dict(low=1.0, high=45.0, order=4, notches=[50.0], notch_q=30.0,

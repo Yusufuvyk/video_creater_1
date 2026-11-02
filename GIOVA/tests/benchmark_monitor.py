@@ -64,12 +64,15 @@ for mode in ("unthrottled_shared_scale", "optimized_per_channel"):
             page._tick(.05)
             app.processEvents()
             durations.append((time.perf_counter_ns()-started)/1e6)
-    results[mode] = dict(mean_frame_ms=float(np.mean(durations[10:])), p95_frame_ms=float(np.percentile(durations[10:], 95)))
+    results[mode] = dict(mean_frame_ms=float(np.mean(durations[10:])),
+                         p95_frame_ms=float(np.percentile(durations[10:], 95)))
     if mode == "optimized_per_channel":
         page.grab().save(str(ROOT/"validation-output"/"monitor-independent-scales.png"))
     page.stop()
     page.close()
     app.processEvents()
-results["context"] = "Offscreen Qt, 16 synthetic channels, 125 Hz, 10 s display, live features open, 160 simulated ticks. CPU/render-loop cost, not hardware FPS. Baseline recreates unthrottled shared-scale work on the same layout."
+results["context"] = ("Offscreen Qt, 16 synthetic channels, 125 Hz, 10 s display, live features open, 160 simulated "
+                      "ticks. CPU/render-loop cost, not hardware FPS. Baseline recreates unthrottled shared-scale "
+                      "work on the same layout.")
 (ROOT/"validation-output"/"monitor-performance.json").write_text(json.dumps(results, indent=2))
 print(json.dumps(results, indent=2))

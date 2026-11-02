@@ -1,0 +1,20 @@
+# GIOVA is a program, not an installable package: this file only configures the linter.
+# Run it as CI does: ruff check .   (the version is pinned in requirements-dev.txt)
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["tests/.tmp", "build", "build_icon", "dist", "Data"]
+
+[tool.ruff.lint]
+# pycodestyle (E, W) and pyflakes (F): one layout everywhere, and every name defined, used and imported once
+select = ["E", "W", "F"]
+# a small callback kept as a named lambda next to where it is used reads better than a def
+ignore = ["E731"]
+
+[tool.ruff.lint.per-file-ignores]
+# each test puts the project on sys.path before importing it
+"tests/**" = ["E402"]
+# HTML help pages and Word XML templates: the long lines are the content
+"eeg/ui/help_content.py" = ["E501"]
+"eeg/ui/workbench/docx.py" = ["E501"]

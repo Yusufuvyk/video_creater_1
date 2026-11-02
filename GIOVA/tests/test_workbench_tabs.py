@@ -15,7 +15,7 @@ os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(ROOT / "tests" / ".tmp"))
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from pyqtgraph.Qt import QtCore, QtGui, QtWidgets  # noqa: E402
+from pyqtgraph.Qt import QtCore, QtWidgets  # noqa: E402
 
 from test_epochs import lateralised  # noqa: E402
 from test_pipeline import imagery, save_fif  # noqa: E402
@@ -24,7 +24,6 @@ from test_workbench import fresh_sheet  # noqa: E402
 from eeg.pipeline import Graph, Runner, templates  # noqa: E402
 from eeg.pipeline.graph import Stopped  # noqa: E402
 from eeg.ui.preferences import user_settings  # noqa: E402
-from eeg.ui.theme import color  # noqa: E402
 from eeg.ui.workbench import WorkbenchPage  # noqa: E402
 from eeg.ui.workbench import sheets as sh  # noqa: E402
 

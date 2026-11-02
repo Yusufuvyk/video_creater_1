@@ -15,7 +15,6 @@ sys.path.insert(0, str(ROOT))
 import numpy as np  # noqa: E402
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets  # noqa: E402
 
-from test_epochs import lateralised  # noqa: E402
 from eeg.ui.detach import DetachableTabs, ResizableSide  # noqa: E402
 from eeg.ui.profile_box import MemorySettings  # noqa: E402
 

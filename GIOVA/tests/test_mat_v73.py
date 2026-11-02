@@ -52,7 +52,8 @@ def differences(a, b, where=""):
     if aa.shape != bb.shape:
         return ["{}: shape {} against {}".format(where, aa.shape, bb.shape)]
     if aa.dtype == object or bb.dtype == object:
-        return [d for i, (x, y) in enumerate(zip(aa.flat, bb.flat)) for d in differences(x, y, "{}[{}]".format(where, i))]
+        return [d for i, (x, y) in enumerate(zip(aa.flat, bb.flat))
+                for d in differences(x, y, "{}[{}]".format(where, i))]
     if aa.dtype.kind in "US" or bb.dtype.kind in "US":
         return [] if aa.tolist() == bb.tolist() else ["{}: {!r} against {!r}".format(where, aa.tolist(), bb.tolist())]
     return [] if np.array_equal(aa.astype(complex), bb.astype(complex)) else ["{}: values differ".format(where)]
@@ -77,7 +78,8 @@ class MatlabV73Tests(unittest.TestCase):
         self.assertEqual(sorted(flat7), sorted(flat73))
         self.assertIn("data{2}.X", flat73)
         self.assertEqual([d for key in sorted(flat7) for d in differences(flat7[key], flat73[key], key)], [])
-        self.assertEqual([r[1:] for r in mat.describe_variables(flat7)], [r[1:] for r in mat.describe_variables(flat73)])
+        self.assertEqual([r[1:] for r in mat.describe_variables(flat7)],
+                         [r[1:] for r in mat.describe_variables(flat73)])
 
     def test_matlab_order_survives_hdf5_s_reversed_storage(self):
         v = mat.read_v73(V73)

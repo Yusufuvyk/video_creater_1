@@ -83,7 +83,9 @@ def find(folders):
     for folder in folders:
         folder = Path(folder)
         candidates = [folder] if (folder / FILENAME).is_file() else (
-            sorted(p for p in folder.iterdir() if (p / FILENAME).is_file()) if folder.is_dir() else [])
+            # by name regardless of case, as Windows sorts paths: the same order on every system
+            sorted((p for p in folder.iterdir() if (p / FILENAME).is_file()), key=lambda p: p.name.casefold())
+            if folder.is_dir() else [])
         for candidate in candidates:
             key = str(candidate.resolve())
             if key in seen:

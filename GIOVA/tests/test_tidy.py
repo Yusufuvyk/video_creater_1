@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import numpy as np  # noqa: E402
-from pyqtgraph.Qt import QtCore, QtWidgets  # noqa: E402
+from pyqtgraph.Qt import QtCore  # noqa: E402
 
-from test_downsample_units import BrainVisionTests  # noqa: E402
+from test_downsample_units import write_brainvision  # noqa: E402
 from test_epochs import app  # noqa: E402
 from test_projects import scratch_tree  # noqa: E402
 from test_settings import release  # noqa: E402
@@ -191,8 +191,8 @@ class RulingTests(Stored):
 
     def test_markers_are_drawn_where_their_samples_are(self):
         from eeg.ui.plots import marker_text
-        self.assertEqual([marker_text(t) for t in ("Primary/P  1", "Stimulus/S 12", "769", "eyes  open", "New Segment/")],
-                         ["P 1", "S 12", "769", "eyes open", "New Segment/"])
+        marked = ("Primary/P  1", "Stimulus/S 12", "769", "eyes  open", "New Segment/")
+        self.assertEqual([marker_text(t) for t in marked], ["P 1", "S 12", "769", "eyes open", "New Segment/"])
         view = self.view()
         try:
             view.set_markers([9.0, 1.0, float("nan"), 5.5], ["Primary/P  2", "Primary/P  1", "x", "Stimulus/S  7"])
@@ -210,18 +210,18 @@ class RulingTests(Stored):
             # Further on, the marker has left the window and its label goes with it.
             view.draw(data, [0, 1], 50.0, self.FS, ["Fz", "Cz"], position=2600, window=1000)
             self.assertEqual(xs(view._marker_lines), [1.0])                 # 9.0 s -> 1.0 s
-            self.assertEqual([l.toPlainText() for l in view._marker_labels if l.isVisible()], ["P 2"])
+            self.assertEqual([label.toPlainText() for label in view._marker_labels if label.isVisible()], ["P 2"])
             view.set_markers()
             view.draw(data, [0, 1], 50.0, self.FS, ["Fz", "Cz"], position=2600, window=1000)
             self.assertEqual(xs(view._marker_lines), [])
-            self.assertFalse(any(l.isVisible() for l in view._marker_labels))
+            self.assertFalse(any(label.isVisible() for label in view._marker_labels))
         finally:
             release(view)
 
     def test_playback_marks_the_recordings_events_and_help_describes_both(self):
         from eeg.ui.monitor import MonitorPage
         with scratch_tree() as directory:
-            BrainVisionTests().write(directory)                              # markers at 1.0 and 3.0 s
+            write_brainvision(directory)                              # markers at 1.0 and 3.0 s
             page = MonitorPage()
             try:
                 self.assertTrue(page.open_file(str(directory / "rec.vhdr")))

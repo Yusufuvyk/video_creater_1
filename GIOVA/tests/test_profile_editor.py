@@ -20,7 +20,6 @@ class ProfileEditorTests(unittest.TestCase):
         self.page = MonitorPage()
         self.page.panel.mode.setCurrentIndex(0)          # file playback: no board at all
         self.dialogs = []
-        real_exec = QtWidgets.QDialog.exec
 
         def capture(dialog):                              # keep it, do not block
             self.dialogs.append(dialog)

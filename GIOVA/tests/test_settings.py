@@ -11,7 +11,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import numpy as np  # noqa: E402
 from pyqtgraph.Qt import QtCore, QtWidgets  # noqa: E402
 
 from test_epochs import app  # noqa: E402

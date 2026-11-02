@@ -19,15 +19,15 @@ from ..preferences import data_dir, setting, user_settings
 from ..theme import color, muted
 from ..icons import only, put
 from ..widgets import NoScrollComboBox
-
-#: How a pipeline is judged on the recordings, as offered in the window
-EVALUATIONS = (("Within each recording", batch.WITHIN),
-               ("Across recordings (train on the others)", batch.ACROSS))
 from ...pipeline import literature
 from .. import recent
 from ..jobs import activity, busy
 from .page import library_menu, ready_made
 from .report import ask_path, comparison_plot, comparison_report, saved_text
+
+#: How a pipeline is judged on the recordings, as offered in the window
+EVALUATIONS = (("Within each recording", batch.WITHIN),
+               ("Across recordings (train on the others)", batch.ACROSS))
 
 #: Files a folder is searched for when it is added.
 RECORDING_PATTERNS = ("*.mat", "*.edf", "*.bdf", "*.gdf", "*.vhdr", "*.fif", "*.set", "*.csv")

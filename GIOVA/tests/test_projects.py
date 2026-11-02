@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 import numpy as np  # noqa: E402
 from pyqtgraph.Qt import QtCore, QtWidgets  # noqa: E402
 
-from test_downsample_units import BrainVisionTests  # noqa: E402
+from test_downsample_units import write_brainvision  # noqa: E402
 from test_epochs import app  # noqa: E402
 from test_settings import release  # noqa: E402
 from test_trial_analysis import scratch  # noqa: E402
@@ -107,7 +107,7 @@ def project_folder(directory):
     root = directory / "Coffee study"
     for sub in ("P01", "P02", "notes", ".git", "dist"):
         (root / sub).mkdir(parents=True)
-    BrainVisionTests().write(root / "P01")                                     # rec.vhdr + .eeg + .vmrk
+    write_brainvision(root / "P01")                                     # rec.vhdr + .eeg + .vmrk
     (root / "P01" / "rec.analysis.json").write_text("{}", encoding="utf-8")
     brainflow_csv(root / "P02" / "live_one.csv")
     (root / "P02" / "live_one_events.csv").write_text("1.0,open\n", encoding="utf-8")

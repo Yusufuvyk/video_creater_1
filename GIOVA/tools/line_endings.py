@@ -17,7 +17,8 @@ TEXT = {".py", ".md", ".txt", ".json", ".cff", ".spec", ".ps1", ".toml", ".cfg",
 #: cmd.exe reads batch files with CRLF; given LF, labels and `goto` can misbehave
 CRLF = {".bat", ".cmd"}
 #: folders that are not the project's own text: environments, builds, data, caches
-SKIP = {".venv", "venv", "build", "dist", "__pycache__", ".tmp", "Data", ".git", "build_icon", ".pytest_cache"}
+SKIP = {".venv", "venv", "build", "dist", "__pycache__", ".tmp", "Data", ".git", "build_icon", ".pytest_cache",
+        ".ruff_cache", ".hypothesis"}
 
 
 def suffix(path):

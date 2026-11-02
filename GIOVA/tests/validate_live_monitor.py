@@ -60,7 +60,8 @@ for width, height in [(1366, 768), (1920, 1080)]:
         app.processEvents()
         name = f'festival-{mode.lower()}-{width}x{height}'
         window.grab().save(str(out / (name + '.png')))
-        sizes[name] = [window.width(), window.height(), window.minimumSizeHint().width(), window.minimumSizeHint().height()]
+        hint = window.minimumSizeHint()
+        sizes[name] = [window.width(), window.height(), hint.width(), hint.height()]
 page._show_channel(3)
 app.processEvents()
 page.detail.grab().save(str(out / 'festival-channel-detail.png'))
@@ -92,7 +93,8 @@ def resident_bytes():
         class Counters(ctypes.Structure):
             _fields_ = [('cb', wintypes.DWORD), ('faults', wintypes.DWORD)] + [
                 (name, ctypes.c_size_t) for name in ('peak', 'working', 'quota_peak_paged', 'quota_paged',
-                                                     'quota_peak_nonpaged', 'quota_nonpaged', 'pagefile', 'peak_pagefile')]
+                                                     'quota_peak_nonpaged', 'quota_nonpaged', 'pagefile',
+                                                     'peak_pagefile')]
         counters = Counters()
         counters.cb = ctypes.sizeof(counters)
         handle = ctypes.windll.kernel32.GetCurrentProcess

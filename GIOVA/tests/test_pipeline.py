@@ -22,7 +22,6 @@ from test_epochs import lateralised  # noqa: E402
 from test_trial_analysis import scratch  # noqa: E402
 from eeg.pipeline import Graph, PipelineError, Runner, block  # noqa: E402
 from eeg.pipeline import batch, learn, templates  # noqa: E402
-from eeg.pipeline.data import Epochs  # noqa: E402
 
 try:
     import sklearn  # noqa: F401

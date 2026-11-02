@@ -1,4 +1,8 @@
-# Development only: building the exe. scikit-learn and pyriemann are now part of
-# the program itself (requirements-lock.txt).
+# Development only: building the exe, linting and testing. scikit-learn and pyriemann are part of the
+# program itself (requirements-lock.txt).
 -r requirements-lock.txt
 pyinstaller==6.22.3
+# the linter CI runs (configured in pyproject.toml)
+ruff==0.17.3
+# property-based tests (tests/test_properties.py)
+hypothesis==6.170.14

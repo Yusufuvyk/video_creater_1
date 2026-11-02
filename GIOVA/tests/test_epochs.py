@@ -52,7 +52,6 @@ MI = ep.EpochSettings(tmin=0, tmax=7, baseline=[0.5, 1.5], active=[2.5, 4.5], fm
 
 class UnitLabelTests(unittest.TestCase):
     def test_psd_axis_never_gets_an_si_prefix(self):
-        import pyqtgraph as pg
         from eeg.ui.plots import value_axis
         app()
         plot = pg.PlotWidget()
@@ -366,7 +365,8 @@ class LoaderTests(unittest.TestCase):
             marked = load_recording(lower)
             self.assertEqual(marked.events.labels, ["769"])
             self.assertEqual([label for _, _, label in marked.bad_spans], ["bad_motion"])
-            raw.set_annotations(mne.Annotations([2.0, 6.0, 10.0, 14.0], [4, 4, 4, 1], ["769", "770", "769", "BAD_blink"]))
+            raw.set_annotations(mne.Annotations([2.0, 6.0, 10.0, 14.0], [4, 4, 4, 1],
+                                                ["769", "770", "769", "BAD_blink"]))
             ep.save_label_map(path, {"769": "left", "770": "right"})
             self.assertEqual(ep.events_for(recording, path)[0].labels, ["left", "right", "left"])
             epochs = mne.Epochs(raw, np.array([[320, 0, 1], [960, 0, 2]]), dict(left=1, right=2),

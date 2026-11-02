@@ -163,9 +163,6 @@ class MonitorFlow(unittest.TestCase):
         tones = {6: lead_off(400e3, seconds=6), 7: lead_off(3e6, seconds=6, offset=0)}
         state = dict(channel=None, pos=0)
 
-        def step(previous, following, hardware):
-            state['channel'], state['pos'] = following, 0
-
         def read(n):
             chunk = np.zeros((16, 6))
             c = state['channel']

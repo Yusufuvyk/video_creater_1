@@ -112,24 +112,27 @@ class DownsampleTests(unittest.TestCase):
         np.testing.assert_allclose(reduced.data[0, 300:495], 5 * np.sin(2 * np.pi * 10 * t[300:495]), atol=0.25)
 
 
+def write_brainvision(directory):
+    """A .vhdr, .eeg and .vmrk: Fz and Cz in µV at 500 Hz, an accelerometer channel, markers at 1 and 3 s.
+    Returns the EEG as written, in µV."""
+    fs, n = 500, 2000
+    eeg = np.vstack([sine(fs, n / fs, (10, 20)), sine(fs, n / fs, (6, 8))])
+    stored = np.vstack([eeg / 0.5, np.full((1, n), 980.0)]).astype("<f4")      # resolution 0.5 µV
+    stored.T.tofile(directory / "rec.eeg")
+    (directory / "rec.vhdr").write_text(
+        "BrainVision Data Exchange Header File Version 1.0\n\n[Common Infos]\nCodepage=UTF-8\n"
+        "DataFile=rec.eeg\nMarkerFile=rec.vmrk\nDataFormat=BINARY\nDataOrientation=MULTIPLEXED\n"
+        "NumberOfChannels=3\nSamplingInterval=2000\n\n[Binary Infos]\nBinaryFormat=IEEE_FLOAT_32\n\n"
+        "[Channel Infos]\nCh1=Fz,,0.5,µV\nCh2=Cz,,0.5,µV\nCh3=x_dir,,1,mg\n", encoding="utf-8")
+    (directory / "rec.vmrk").write_text(
+        "BrainVision Data Exchange Marker File Version 1.0\n\n[Common Infos]\nCodepage=UTF-8\n"
+        "DataFile=rec.eeg\n\n[Marker Infos]\nMk1=New Segment,,1,1,0,20261007154144599073\n"
+        "Mk2=Primary,P  1,501,1,0\nMk3=Primary,P  1,1501,1,0\n", encoding="utf-8")
+    return eeg
+
+
 class BrainVisionTests(unittest.TestCase):
     """What Help says a .vhdr gives: EEG in µV, markers as events, no accelerometer."""
-
-    def write(self, directory):
-        fs, n = 500, 2000
-        eeg = np.vstack([sine(fs, n / fs, (10, 20)), sine(fs, n / fs, (6, 8))])
-        stored = np.vstack([eeg / 0.5, np.full((1, n), 980.0)]).astype("<f4")      # resolution 0.5 µV
-        stored.T.tofile(directory / "rec.eeg")
-        (directory / "rec.vhdr").write_text(
-            "BrainVision Data Exchange Header File Version 1.0\n\n[Common Infos]\nCodepage=UTF-8\n"
-            "DataFile=rec.eeg\nMarkerFile=rec.vmrk\nDataFormat=BINARY\nDataOrientation=MULTIPLEXED\n"
-            "NumberOfChannels=3\nSamplingInterval=2000\n\n[Binary Infos]\nBinaryFormat=IEEE_FLOAT_32\n\n"
-            "[Channel Infos]\nCh1=Fz,,0.5,µV\nCh2=Cz,,0.5,µV\nCh3=x_dir,,1,mg\n", encoding="utf-8")
-        (directory / "rec.vmrk").write_text(
-            "BrainVision Data Exchange Marker File Version 1.0\n\n[Common Infos]\nCodepage=UTF-8\n"
-            "DataFile=rec.eeg\n\n[Marker Infos]\nMk1=New Segment,,1,1,0,20261007154144599073\n"
-            "Mk2=Primary,P  1,501,1,0\nMk3=Primary,P  1,1501,1,0\n", encoding="utf-8")
-        return eeg
 
     def test_a_vhdr_opens_with_its_markers(self):
         from eeg.core.config import RECORDING_FILTER, RECORDING_SUFFIXES
@@ -137,7 +140,7 @@ class BrainVisionTests(unittest.TestCase):
         self.assertIn(".vhdr", RECORDING_SUFFIXES)
         self.assertIn("*.vhdr", RECORDING_FILTER)
         with scratch() as directory:
-            eeg = self.write(directory)
+            eeg = write_brainvision(directory)
             recording = load_recording(directory / "rec.vhdr")
             self.assertEqual((recording.fs, recording.channel_names), (500.0, ["Fz", "Cz"]))
             np.testing.assert_allclose(recording.data, eeg, atol=1e-3)             # microvolts

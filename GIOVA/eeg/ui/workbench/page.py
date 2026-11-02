@@ -1220,7 +1220,7 @@ class WorkbenchPage(QtWidgets.QWidget):
                 states[node_id] = ("", "", "")
             elif key in self.cache:
                 lines = [result_line(v) for v in self.cache[key].values()]
-                states[node_id] = ("done", " · ".join(l for l in lines if l), "")
+                states[node_id] = ("done", " · ".join(line for line in lines if line), "")
             elif self.cache:
                 states[node_id] = ("stale", "changed: Run to update", "")
         if sheet.status in (RUNNING, STOPPING):

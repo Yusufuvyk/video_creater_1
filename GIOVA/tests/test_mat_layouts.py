@@ -131,7 +131,7 @@ class KeptLayoutTests(unittest.TestCase):
             mapping = mat.Mapping("rec{*}.sig", fs=100.0, onsets_key="rec{*}.pos", onset_unit=mat.SAMPLES_0,
                                   codes_key="rec{*}.kind")
             lo.save(lo.Layout("Lab export", "test", mapping, channels=8), directory)
-            self.assertEqual([l.name for l in lo.saved(directory)], ["Lab export"])
+            self.assertEqual([layout.name for layout in lo.saved(directory)], ["Lab export"])
             two = mat.read_variables(directory / "two.mat")
             self.assertEqual(mat.mapping_for(directory / "two.mat", two, directory).data_key, "rec{*}.sig")
             recording = mat.apply_mapping(two, mat.mapping_for(directory / "two.mat", two, directory))
@@ -165,7 +165,7 @@ class DialogTests(unittest.TestCase):
             dialog.keep_name.setText("BNCI-like")
             kept = dialog.keep_layout(dialog.mapping())
             self.assertEqual(kept.channels, 25)
-            self.assertEqual([l.name for l in lo.saved(directory)], ["BNCI-like"])
+            self.assertEqual([layout.name for layout in lo.saved(directory)], ["BNCI-like"])
             dialog.close()
 
 

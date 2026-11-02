@@ -30,7 +30,8 @@ class Splash(unittest.TestCase):
         colours = {image.pixelColor(x, y).name() for x in range(0, 1200, 2) for y in range(0, 676, 2)}
 
         def near(target):
-            return any(abs(QtGui.QColor(c).red() - target.red()) < 30 and abs(QtGui.QColor(c).green() - target.green()) < 30
+            return any(abs(QtGui.QColor(c).red() - target.red()) < 30
+                       and abs(QtGui.QColor(c).green() - target.green()) < 30
                        and abs(QtGui.QColor(c).blue() - target.blue()) < 30 for c in colours)
         self.assertTrue(near(BLUE))
         self.assertTrue(near(TEAL))            # the logo's ribbon and the accent
@@ -108,7 +109,8 @@ class Splash(unittest.TestCase):
     def test_splash_module_does_not_pull_in_the_heavy_stack(self):
         # The point of the splash is to be on screen before scipy/brainflow load.
         code = ("import sys; sys.path.insert(0, r'{}'); import eeg.ui.splash; "
-                "print(','.join(m for m in ('scipy', 'brainflow', 'numpy', 'pandas') if m in sys.modules))").format(HERE)
+                "print(','.join(m for m in ('scipy', 'brainflow', 'numpy', 'pandas') if m in sys.modules))"
+                ).format(HERE)
         out = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True,
                              env=dict(os.environ, QT_QPA_PLATFORM='offscreen'), timeout=60)
         self.assertEqual(out.returncode, 0, out.stderr)

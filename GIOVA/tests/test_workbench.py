@@ -507,7 +507,7 @@ class RunTests(unittest.TestCase):
             page.canvas.select(ica)
             self.assertIsNotNone(page.inspector.result)
             page.canvas.select("cross_validate1")
-            texts = " ".join(l.text() for l in page.inspector.findChildren(QtWidgets.QLabel))
+            texts = " ".join(label.text() for label in page.inspector.findChildren(QtWidgets.QLabel))
             self.assertIn("Tuning chose C = ", texts)
             self.assertIn("balanced accuracy", texts)
 
